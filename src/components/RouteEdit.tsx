@@ -1,13 +1,17 @@
 import { useState } from 'react'
 import Swal from 'sweetalert2'
-import { Route } from '../types/Route'
 import { RouteFormProps } from '../types/props/RouteFormProps'
+import { Route } from '../types/Route'
+import useRouteStore from '../stores/useRouteStore'
+import { DEFAULTCITY } from '../constants/cts'
 
-const RouteFrom = ({ onSave, initialData }: RouteFormProps) => {
+const RouteEdit = ({ onSave }: RouteFormProps) => {
+    const { routeEdit } = useRouteStore()
+    const initialData = routeEdit
     const [formData] = useState<Partial<Route>>(
         initialData || {
-            originCity: '',
-            destinationCity: '',
+            origin: DEFAULTCITY,
+            destiny: DEFAULTCITY,
             cost: 0,
             isDirectRoute: true,
             intermediateStops: [],
@@ -18,14 +22,14 @@ const RouteFrom = ({ onSave, initialData }: RouteFormProps) => {
         const { value: formValues } = await Swal.fire({
             title: initialData ? 'Editar Ruta' : 'Nueva Ruta',
             html: `
-                <form class='space-y-4'>
+                <div class='space-y-4'>
                     <div class='w-full gap-1.5 flex items-center justify-between md:align-middle flex-col md:flex-row mb-4'>
                         <label for='originCity'
                         >Ciudad de Origen</label>
                         <input
                         class="border border-gray-300 rounded px-2 py-2"
                             id='originCity'
-                            value="${formData.originCity ?? ''}"
+                            value="${formData.origin?.name ?? ''}"
                             required
                         />
                     </div>
@@ -35,7 +39,7 @@ const RouteFrom = ({ onSave, initialData }: RouteFormProps) => {
                         <input
                         class="border border-gray-300 rounded px-2 py-2"
                             id='destinationCity'
-                            value="${formData.destinationCity ?? ''}"
+                            value="${formData.destiny?.name ?? ''}"
                             required
                         />
                     </div>
@@ -62,18 +66,17 @@ const RouteFrom = ({ onSave, initialData }: RouteFormProps) => {
                             value="${formData.intermediateStops?.join(', ') ?? ''}"
                         />
                     </div>
-                    <button className='w-full'>
-                        ${initialData ? 'Guardar Cambios' : 'Crear Ruta'}
-                    </button>
-                </form>`,
-            showConfirmButton: false,
+                </div>`,
+            showCancelButton: true,
+            confirmButtonText: initialData ? 'Guardar Cambios' : 'Crear Ruta',
+            cancelButtonText: 'Cancelar',
             showCloseButton: true,
             focusConfirm: false,
             preConfirm: () => {
-                const originCity = (
+                const origin = (
                     document.getElementById('originCity') as HTMLInputElement
                 ).value
-                const destinationCity = (
+                const destiny = (
                     document.getElementById('destinationCity') as HTMLInputElement
                 ).value
                 const cost = (document.getElementById('cost') as HTMLInputElement)
@@ -82,19 +85,28 @@ const RouteFrom = ({ onSave, initialData }: RouteFormProps) => {
                     document.getElementById('intermediateStops') as HTMLInputElement
                 ).value
 
-                if (!originCity || !destinationCity || !cost) {
-                    Swal.showValidationMessage('Todos los campos son requeridos')
+                if (!origin || !destiny || !cost) {
+                    Swal.showValidationMessage(
+                        'Los campos de la ciudad de origen, el destino y el costo son requeridos'
+                    )
                     return false
                 }
 
                 return {
-                    originCity,
-                    destinationCity,
+                    origin: {
+                        name: origin,
+                        color: ''
+                    },
+                    destiny: {
+                        name: destiny,
+                        color: ''
+                    },
                     cost: parseFloat(cost),
                     intermediateStops: intermediateStops
-                        .split(',')
-                        .map((s) => s.trim()),
-                    isDirectRoute: intermediateStops.length === 0,
+                        ? intermediateStops.split(',').map((s) => s.trim())
+                        : [],
+                    isDirectRoute:
+                        !intermediateStops || intermediateStops.trim().length === 0,
                 }
             },
         })
@@ -106,9 +118,13 @@ const RouteFrom = ({ onSave, initialData }: RouteFormProps) => {
 
     return (
         <div>
-            <button onClick={showForm}>Agregar Nueva Ruta</button>
+            <button
+                onClick={showForm}
+                className='bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded'>
+                Agregar Nueva Ruta
+            </button>
         </div>
     )
 }
 
-export default RouteFrom
+export default RouteEdit
