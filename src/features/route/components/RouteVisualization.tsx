@@ -1,10 +1,10 @@
 import { useEffect, useRef } from 'react'
-import useRouteStore from '../stores/useRouteStore'
+import useRouteStore from '../store/useRouteStore'
 
 const RouteVisualization = () => {
     const { routes } = useRouteStore()
     const canvasRef = useRef<HTMLCanvasElement>(null)
-    const animationRef = useRef<number | null>(null)
+    const animationRef = useRef<NodeJS.Timeout | null>(null)
 
     // Función para generar colores únicos para cada ciudad con buen contraste
     const getCityColors = (cities: string[]): Map<string, string> => {

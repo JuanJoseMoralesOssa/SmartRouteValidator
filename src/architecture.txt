@@ -1,0 +1,49 @@
+/src
+├── app/
+│   ├── router.tsx
+│   ├── store.ts
+│   └── App.tsx
+│
+├── features/
+│   ├── product/
+│   │   ├── components/
+│   │   │   ├── atoms/
+│   │   │   ├── molecules/
+│   │   │   └── organisms/
+│   │   ├── hooks/
+│   │   ├── pages/
+│   │   ├── services/
+│   │   ├── store/
+│   │   └── types.ts
+│   └── user/
+│       ├── components/
+│       │   ├── atoms/
+│       │   ├── molecules/
+│       │   └── organisms/
+│       ├── hooks/
+│       ├── pages/
+│       ├── services/
+│       ├── store/
+│       └── types.ts
+│
+├── shared/
+│   ├── components/
+│   │   ├── atoms/
+│   │   ├── molecules/
+│   │   └── organisms/
+│   ├── hooks/
+│   ├── utils/
+│   ├── types/
+│   └── constants/
+│
+├── config/
+│   ├── axios.ts
+│   └── env.ts
+│
+├── styles/
+│   ├── tailwind.config.js
+│   └── index.css
+│
+├── assets/
+│
+└── index.tsx

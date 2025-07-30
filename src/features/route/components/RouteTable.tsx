@@ -1,8 +1,8 @@
-import useRouteStore from '../stores/useRouteStore'
+import { Route } from '@/shared/types/entities/Route'
+import useRouteStore from '../store/useRouteStore'
 import { RoutesTableProps } from '../types/props/RouteTableProps'
-import { Route } from '../types/Route'
 
-export function RoutesTable({ onDeleteRoute }: RoutesTableProps) {
+export function RoutesTable({ onDeleteRoute }: Readonly<RoutesTableProps>) {
     const { routes, setRouteEdit } = useRouteStore()
 
     console.log('RouteTable rendered with routes:', routes?.length || 0)

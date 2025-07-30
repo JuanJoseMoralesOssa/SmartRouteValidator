@@ -1,6 +1,6 @@
+import { Route } from '@/shared/types/entities/Route'
 import { create } from 'zustand'
 import { createJSONStorage, persist } from 'zustand/middleware'
-import { Route } from '../types/Route'
 
 interface RouteStore {
     routeCreate: Route | null

@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import Swal from 'sweetalert2'
 import { RouteFormProps } from '../types/props/RouteFormProps'
-import { Route } from '../types/Route'
-import useRouteStore from '../stores/useRouteStore'
-import { DEFAULTCITY } from '../constants/cts'
+import useRouteStore from '../store/useRouteStore'
+import { Route } from '@/shared/types/entities/Route'
+import { DEFAULTCITY } from '@constants/cts'
+
 
 const RouteEdit = ({ onSave }: RouteFormProps) => {
     const { routeEdit } = useRouteStore()
