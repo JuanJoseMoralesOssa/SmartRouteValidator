@@ -1,0 +1,77 @@
+El repositorio implementa una mezcla entre arquitectura limpia y atomic design
+
+Una cosa muy interesante que logre visualizar con la arquitectura
+ limpia fue que antes en el diseño del diagrama de clases de analisis,
+ aparecio un controlador que lo llame RouteManagementController, el cual
+ es el encargado de crear las cuidades de las rutas si las cuidades no existen,
+ encargado de manejar la relacion de muchos a dos entre las rutas y las cuidades,
+ despues de basarme en las clases de arquitectura limpia y de ver su aplicacion con
+ un ejempo de loopback me di cuenta que esa relacion ya la crea loopback por defecto,
+ al igual que crea un controlador especifico para el manejo de estas dos entidades.
+
+El repositorio implementa buenas practicas como que devuelve una copia de el diccionario
+
+Validar:
+  Se ha tratado de seguir las buenas practicas de arquitectura limpia, y de atomic design,
+  separando las responsabilidades de los controladores, servicios y repositorios.
+  He tratado de manejar un alto nivel de abstraccion en los metodos, un alto nivel
+  de cohesion y bajo acoplamiento, un buen manejo de excepciones y errores, un buen manejo del
+  single responsability principle. Ademas de otras recomendaciones como que los constructores, los getters y setters no
+  tengan logica de negocio, que los metodos no tengan mas de 10 lineas de codigo, que los nombres
+  de las variables y metodos sean descriptivos, que los metodos no tengan mas de 3 parametros,
+  que los metodos sean pequenos y hagan una sola cosa, que los metodos sean facilmente
+  testables y mantenibles. Evitar el codigo repetido, redundante o codigo muerto.
+  He tratado de seguir el principio KISS, y que el codigo sea lo mas simple posible.
+  Trate de que los controladores siguieran un servicio descentralizado, donde los controladores
+  no tengan logica de negocio, y que solo se encarguen de recibir los datos,
+  llamar a los servicios y responder con los mensajes de exito o error.
+  Trate de que los servicios manejen la logica de negocio, como validar existencias
+  o verificar que los datos sean correctos, y a su vez sean descentralizados,
+  donde cada servicio maneje una sola entidad.
+
+Contras:
+  Antes pensaba que seguir toda esta infraestructura sobrediseñar la solucion ya que
+  para solo dos entidades me parecia que estaba sobre pensando la solucion. Sin embargo,
+  me di cuenta por esa misma razon era una buena opcion porque sino tendria codigo repetido
+  y redundante en cada controlador, si seguia el diseño tradicional orientado a POO, el controlador
+  tendria que manejar sus listas o diccionarios de datos internamente y llegue a pensar en su momento,
+  hasta tener un god object de controlador que maneje todo, lo cual es una mala practica. Despues
+  pase a tener dos controladores para cada entidad como dicen los buenos principios pero aun no tenia los servicios,
+  por tanto habia un alto acoplamiento de controladores y rompia el single responsability, mejor era separ logica en
+  los servicios, y que a su vez los servicios sean descentralizados.
+  De hecho, pense en su momento de crear aun mas abstracciones y clases para el manejo de las relaciones,
+  pero en este punto si sentia que era un sobre diseño de la solucion ya que aunque tendria dos agregaciones,
+  una de que cada ruta tendria una ciudad de origen y una ciudad de destino, sigue siendo una relacion de
+  1 a 1, y aunque esta repetida no le vi mucha aplicacion ya que era una relacion que salia mas facil
+  manejarla directamente en el controlador. La otra relacion de que una ciudad puede tener muchas rutas,
+  tan poco vi la necesidad de implementar esta relacion en los repositorios, ya que de implementar alguna
+  tiraria mas por la de las rutas a las ciudades ya que las rutas es el core de la aplicacion y serian
+  las que tendrian mas consultas lo que demuestra una mayor necesidad de acceder a la informacion,
+  junto con una mayor cantidad de datos.
+
+  Por tanto, para disminuir la carga de responsabilidades de las clases controladoras,
+  cree los servicios y los repositorios, para que ellos manejen las colecciones, el guardar, el
+  actualizar, el eliminar, el buscar de las entidades. Y que los controladores, solo reciba los datos,
+  llame a los servicios y responda con los mensajes de exito o error. Que los servicios sean los
+  encargados de tener la logica de negocio, como validar existencias o verificar que los datos
+  sean correctos, y que los repositorios manejen las colecciones de datos, ya sea un array o un diccionario.
+
+
+
+Posibilidades de mejora:
+  Crear un datasource que maneje los repositorios independientemente
+  si es un array o un diccionario.
+
+  Implementar singleton en el store global para los repositorios y los controladores, y en un futuro
+  el datasource. Ya que son dependencias que no cambian a lo largo de la ejecucion
+  de la aplicacion, y que no necesitan ser instanciadas varias veces.
+
+  Implementar en un futuro la agregacion de uno a uno entre rutas y ciudades.
+
+  Mejorar la forma de enviar los mensajes de error y exito, para que sean mas descriptivos
+  o crea una clase de respuesta que maneje los mensajes de error y exito,
+
+  Implementar la paginacion de los datos, ya que si bien el repositorio
+  devuelve una copia del diccionario, no implementa la paginacion de los datos,
+  por lo que si se tiene un gran volumen de datos, se tendria que implementar
+  una paginacion para no cargar todos los datos de una sola vez.

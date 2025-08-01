@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 380 320" width="380" height="320">
+  <!-- Caminos existentes -->
+  <path d="M 40 50 C 70 40 100 60 125 45 C 150 30 180 55 230 50 C 250 55 260 70 255 90 C 250 110 240 120 230 130 C 205 145 155 135 125 140 C 95 145 65 135 40 130" stroke="#5B6AB0" stroke-width="16" fill="none" stroke-linecap="round"/>
+  <path d="M 230 50 C 232 52 234 55 238 60 C 250 75 265 90 280 110 C 300 135 310 150 320 170" stroke="#5B6AB0" stroke-width="16" fill="none" stroke-linecap="round"/>
+
+  <!-- Camino de 3 a 5 -->
+  <path d="M 40 170 C 90 200 140 260 200 275" stroke="#5B6AB0" stroke-width="16" fill="none" stroke-linecap="round"/>
+
+  <!-- Camino de 5 a 4 -->
+  <path d="M 200 275 C 240 260 280 220 320 180" stroke="#5B6AB0" stroke-width="16" fill="none" stroke-linecap="round"/>
+
+  <!-- Nuevo camino de 1 a 3 -->
+  <path d="M 40 60 C 25 85 25 115 40 145" stroke="#5B6AB0" stroke-width="16" fill="none" stroke-linecap="round"/>
+
+  <!-- Bases -->
+  <ellipse cx="40" cy="60" rx="35" ry="25" fill="#86EFAC" opacity="0.8"/>
+  <ellipse cx="230" cy="60" rx="45" ry="28" fill="#60D5F2" opacity="0.9"/>
+  <ellipse cx="230" cy="60" rx="35" ry="25" fill="#86EFAC" opacity="0.6"/>
+  <ellipse cx="40" cy="170" rx="35" ry="25" fill="#86EFAC" opacity="0.8"/>
+  <ellipse cx="320" cy="180" rx="35" ry="25" fill="#86EFAC" opacity="0.8"/>
+  <ellipse cx="200" cy="275" rx="35" ry="25" fill="#86EFAC" opacity="0.8"/>
+
+  <!-- Marcadores -->
+  <path d="M 40 8 C 24 8 12 20 12 36 C 12 52 40 80 40 80 C 40 80 68 52 68 36 C 68 20 56 8 40 8 Z" fill="#FF5A7A"/>
+  <circle cx="40" cy="36" r="12" fill="white"/>
+
+  <path d="M 230 8 C 214 8 202 20 202 36 C 202 52 230 80 230 80 C 230 80 258 52 258 36 C 258 20 246 8 230 8 Z" fill="#FF5A7A"/>
+  <circle cx="230" cy="36" r="12" fill="white"/>
+
+  <path d="M 40 118 C 24 118 12 130 12 146 C 12 162 40 190 40 190 C 40 190 68 162 68 146 C 68 130 56 118 40 118 Z" fill="#FF5A7A"/>
+  <circle cx="40" cy="146" r="12" fill="white"/>
+
+  <path d="M 320 128 C 304 128 292 140 292 156 C 292 172 320 200 320 200 C 320 200 348 172 348 156 C 348 140 336 128 320 128 Z" fill="#FF5A7A"/>
+  <circle cx="320" cy="156" r="12" fill="white"/>
+
+  <path d="M 200 223 C 184 223 172 235 172 251 C 172 267 200 295 200 295 C 200 295 228 267 228 251 C 228 235 216 223 200 223 Z" fill="#FF5A7A"/>
+  <circle cx="200" cy="251" r="12" fill="white"/>
+</svg>
