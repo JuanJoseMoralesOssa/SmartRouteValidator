@@ -1,13 +1,13 @@
 import { DEFAULTCITY } from '@constants/cts'
 import { useState } from 'react'
 import Swal from 'sweetalert2'
-import { RouteFormProps } from '../types/props/RouteFormProps'
+import useRouteStore from '../stores/useRouteStore'
 import { Route } from '@/shared/types/entities/Route'
-import useRouteStore from '../store/useRouteStore'
+import { useRouteController } from '../controller/RouteController'
 
-const RouteCreate = ({ onSave }: RouteFormProps) => {
-    const { routeCreate } = useRouteStore()
-    const initialData = routeCreate
+const RouteCreate = () => {
+    const { route: initialData } = useRouteStore()
+    const { handleCreate } = useRouteController()
     const [formData] = useState<Partial<Route>>(
         initialData || {
             origin: DEFAULTCITY,
@@ -112,7 +112,7 @@ const RouteCreate = ({ onSave }: RouteFormProps) => {
         })
 
         if (formValues) {
-            onSave(formValues)
+            handleCreate(formValues)
         }
     }
 

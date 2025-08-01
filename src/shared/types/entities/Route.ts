@@ -1,7 +1,8 @@
+import { ID } from "../ID"
 import { City } from "./City"
 
 export interface Route {
-    id: string
+    id?: ID
     origin: City
     destiny: City
     cost: number

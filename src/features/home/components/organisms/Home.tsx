@@ -1,89 +1,19 @@
-import { useEffect, useState } from 'react'
-import useRouteStore from '@/features/route/store/useRouteStore'
-import { DEFAULTCITY } from '@constants/cts'
 import RouteCreate from '@/features/route/components/RouteCreate'
 import RouteVisualization from '@/features/route/components/RouteVisualization'
 import RoutesTable from '@/features/route/components/RouteTable'
-import { Route } from '@entities/Route'
+import { useEffect } from 'react'
+import useRouteStore from '@/features/route/stores/useRouteStore'
+import { useRouteController } from '@/features/route/controller/RouteController'
 
 function Home() {
   const { routes, setRoutes } = useRouteStore()
+  const { handleGetAllData, errors } = useRouteController()
 
-  console.log('App renderizado con routes:', routes?.length || 0)
-
-  // Inicializar routes si es null
   useEffect(() => {
     if (routes === null) {
-      setRoutes([])
+      setRoutes(handleGetAllData())
     }
-  }, [routes, setRoutes])
-
-  const [error, setError] = useState<string | null>(null)
-
-  const validateRoute = (): boolean => {
-    // Verificar si existe una ruta con escalas más económica
-    // const indirectRoutes = routes.filter(
-    //     (r) =>
-    //         !r.isDirectRoute &&
-    //         r.originCity === route.originCity &&
-    //         r.destinationCity === route.destinationCity
-    // )
-
-    // for (const indirectRoute of indirectRoutes) {
-    //     if (indirectRoute.cost < (route.cost || 0)) {
-    //         setError(
-    //             `Error: Existe una ruta con escalas más económica (${indirectRoute.cost})`
-    //         )
-    //         return false
-    //     }
-    // }
-
-    return true
-  }
-
-  const handleSaveRoute = (newRoute: Partial<Route>) => {
-    if (routes === null) {
-      return setError('Error: No se pudo cargar las rutas')
-    }
-
-    setError(null)
-
-    if (!validateRoute()) {
-      return
-    }
-
-    const routeToSave: Route = {
-      id: newRoute.id ?? Math.random().toString(36).slice(2, 11),
-      origin: newRoute.origin ?? DEFAULTCITY,
-      destiny: newRoute.destiny ?? DEFAULTCITY,
-      cost: newRoute.cost ?? 0,
-      isDirectRoute: newRoute.isDirectRoute ?? false,
-      intermediateStops: newRoute.intermediateStops ?? [],
-    }
-
-    if (newRoute.id) {
-      const updatedRoutes = routes.map((r) => (r.id === newRoute.id ? routeToSave : r))
-      setRoutes(updatedRoutes)
-      console.log('Ruta editada:', routeToSave)
-    } else {
-      const updatedRoutes = [...routes, routeToSave]
-      setRoutes(updatedRoutes)
-      console.log('Nueva ruta creada:', routeToSave)
-    }
-  }
-
-  const handleDeleteRoute = (routeId: string) => {
-    if (routes === null) {
-      return setError('Error: No se pudo cargar las rutas')
-    }
-
-    // Filtrar la ruta a eliminar
-    const updatedRoutes = routes.filter((r) => r.id !== routeId)
-    setRoutes(updatedRoutes)
-    setError(null)
-
-    console.log('Ruta eliminada, rutas actualizadas:', updatedRoutes)
-  }
+  }, [routes, setRoutes, handleGetAllData])
 
   return (
     <div className='min-h-screen max-w-7xl my-0 mx-auto p-2 text-center bg-gradient-to-br from-blue-50 via-white to-indigo-50'>
@@ -156,7 +86,7 @@ function Home() {
         </div>
 
         {/* Error Alert */}
-        {error && (
+        {errors.length > 0 && (
           <div className='bg-red-50 border-l-4 border-red-400 p-4 rounded-lg shadow-sm'>
             <div className='flex'>
               <div className='flex-shrink-0'>
@@ -164,7 +94,7 @@ function Home() {
               </div>
               <div className='ml-3'>
                 <p className='text-sm text-red-700'>
-                  <strong className='font-semibold'>Error:</strong> {error}
+                  <strong className='font-semibold'>Error:</strong> {errors.join(', ')}
                 </p>
               </div>
             </div>
@@ -173,7 +103,7 @@ function Home() {
 
         {/* Action Section */}
         <div className='flex justify-center'>
-          <RouteCreate onSave={handleSaveRoute} />
+          <RouteCreate />
         </div>
 
         {/* Main Content Grid */}
@@ -209,7 +139,7 @@ function Home() {
                 </p>
               </div>
               <div className='p-6'>
-                <RoutesTable onDeleteRoute={handleDeleteRoute} />
+                <RoutesTable />
               </div>
             </div>
           </div>

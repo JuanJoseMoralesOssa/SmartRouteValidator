@@ -1,20 +1,20 @@
 /src
-├── app/
-│   ├── router.tsx
-│   ├── store.ts
-│   └── App.tsx
+├── app/                         # Setup general (providers, router, store global)
+│   ├── router.tsx               # Rutas centralizadas (React Router)
+│   ├── store.ts                 # Configuración global del estado (Redux/Zustand)
+│   └── App.tsx                  # Punto de entrada de la app
 │
-├── features/
+├── features/                    # Módulos por dominio funcional (User, Product, etc.)
 │   ├── product/
-│   │   ├── components/
+│   │   ├── components/          # Componentes locales del feature (Atomic Design opcional aquí)
 │   │   │   ├── atoms/
 │   │   │   ├── molecules/
 │   │   │   └── organisms/
-│   │   ├── hooks/
-│   │   ├── pages/
-│   │   ├── services/
-│   │   ├── store/
-│   │   └── types.ts
+│   │   ├── hooks/               # Hooks específicos de producto (useFetchProducts, etc.)
+│   │   ├── pages/               # Vistas de alto nivel (ProductListPage, etc.)
+│   │   ├── services/            # Llamadas API, lógica de infraestructura
+│   │   ├── store/               # Estado local/global del feature
+│   │   └── types.ts             # Tipado específico del módulo
 │   └── user/
 │       ├── components/
 │       │   ├── atoms/
@@ -26,24 +26,79 @@
 │       ├── store/
 │       └── types.ts
 │
-├── shared/
-│   ├── components/
-│   │   ├── atoms/
-│   │   ├── molecules/
-│   │   └── organisms/
-│   ├── hooks/
-│   ├── utils/
-│   ├── types/
-│   └── constants/
+├── shared/                      # Reutilizables y agnósticos al dominio
+│   ├── components/              # Componentes reutilizables por toda la app
+│   │   ├── atoms/               # Botones, Inputs, Tags, Icons
+│   │   ├── molecules/           # Formularios, Select con Label, etc.
+│   │   └── organisms/           # Modales, Headers, Tables reutilizables
+│   ├── hooks/                   # Hooks comunes (useDebounce, useToggle)
+│   ├── utils/                   # Helpers puros (formato de fechas, validadores, etc.)
+│   ├── types/                   # Tipos globales y genéricos
+│   └── constants/               # Constantes globales
 │
-├── config/
+├── config/                      # Configuración de Axios, Environments, etc.
 │   ├── axios.ts
 │   └── env.ts
 │
-├── styles/
+├── styles/                      # Estilos globales (Tailwind o CSS Modules)
 │   ├── tailwind.config.js
 │   └── index.css
 │
-├── assets/
+├── assets/                      # Imágenes, íconos SVG, fuentes, etc.
 │
-└── index.tsx
+└── index.tsx                    # Entry point principal
+
+
+
+Capas lógicas (inspiradas en Clean Architecture)
+Presentación (UI):
+
+Componentes funcionales y páginas.
+
+Usa Atomic Design si quieres escalar bien (atoms, molecules, organisms, templates, pages).
+
+Framework UI recomendado: TailwindCSS + ShadCN UI o Material UI.
+
+Hooks (Estado + lógica de UI):
+
+useProductForm, useUserList → lógica desacoplada de la vista.
+
+Estado con Redux Toolkit, Zustand o React Query, según el caso.
+
+Casos de uso (Opcional si el proyecto crece):
+
+Encapsula lógica específica de dominio: createUser, getProductsByCategory.
+
+Servicios (infraestructura):
+
+Acceso a API externa (REST/GraphQL).
+
+Aquí va Axios, fetch, etc.
+
+Modelos y Tipos:
+
+Tipos TypeScript y validaciones (con Zod o Yup).
+
+🧠 Buenas prácticas clave
+Separación de preocupaciones: componentes no deben tener lógica de negocio.
+
+Reutilización: extrae lógica a hooks y servicios.
+
+Modularidad: cada feature debe ser autónoma, ideal para escalar.
+
+Tipado fuerte: usa TypeScript siempre.
+
+Testing: Testing Library + Jest o Vitest.
+
+CI/CD: Github Actions + Vercel/Netlify o Azure/AWS para despliegue.
+
+🚀 Bonus: Herramientas útiles
+React Query o TanStack Query: manejo de datos remoto y caching.
+
+Zustand o Redux Toolkit: estado global.
+
+React Router DOM v6.: enrutamiento moderno.
+
+TailwindCSS: utilidad + diseño limpio.
+
+Storybook: documenta tus componentes.

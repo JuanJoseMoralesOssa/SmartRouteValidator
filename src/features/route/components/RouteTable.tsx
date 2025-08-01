@@ -1,14 +1,14 @@
 import { Route } from '@/shared/types/entities/Route'
-import useRouteStore from '../store/useRouteStore'
-import { RoutesTableProps } from '../types/props/RouteTableProps'
+import useRouteStore from '../stores/useRouteStore'
+import { useRouteController } from '../controller/RouteController'
 
-export function RoutesTable({ onDeleteRoute }: Readonly<RoutesTableProps>) {
-    const { routes, setRouteEdit } = useRouteStore()
-
+export function RoutesTable() {
+    const { routes, setRoute } = useRouteStore()
+    const { handleDelete } = useRouteController()
     console.log('RouteTable rendered with routes:', routes?.length || 0)
 
     const onEditRoute = (route: Route) => {
-        setRouteEdit(route)
+        setRoute(route)
     }
 
     return (
@@ -142,7 +142,7 @@ export function RoutesTable({ onDeleteRoute }: Readonly<RoutesTableProps>) {
                                             <span>Editar</span>
                                         </button>
                                         <button
-                                            onClick={() => onDeleteRoute(route.id)}
+                                            onClick={() => route.id && handleDelete(route.id)}
                                             className='inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-all duration-200 shadow-sm hover:shadow-md'
                                         >
                                             <span className='mr-2'>🗑️</span>

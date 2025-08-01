@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import useRouteStore from '../store/useRouteStore'
+import useRouteStore from '../stores/useRouteStore'
 
 const RouteVisualization = () => {
     const { routes } = useRouteStore()
