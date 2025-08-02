@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react'
 import useRouteStore from '../stores/useRouteStore'
 
 const RouteVisualization = () => {
-    const { routes } = useRouteStore()
+    const { items: routes } = useRouteStore()
     const canvasRef = useRef<HTMLCanvasElement>(null)
     const animationRef = useRef<NodeJS.Timeout | null>(null)
 

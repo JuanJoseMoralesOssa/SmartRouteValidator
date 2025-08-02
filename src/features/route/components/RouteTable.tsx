@@ -1,9 +1,9 @@
 import { Route } from '@/shared/types/entities/Route'
 import useRouteStore from '../stores/useRouteStore'
-import { useRouteController } from '../controller/RouteController'
+import { useRouteController } from '../hooks/useRouteController'
 
 export function RoutesTable() {
-    const { routes, setRoute } = useRouteStore()
+    const { items: routes, setItem: setRoute } = useRouteStore()
     const { handleDelete } = useRouteController()
     console.log('RouteTable rendered with routes:', routes?.length || 0)
 

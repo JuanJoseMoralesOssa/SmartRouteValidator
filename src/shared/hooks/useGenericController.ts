@@ -1,29 +1,31 @@
 import { useState } from "react"
 import { Service } from "../services/service";
 import { DataObject } from "../types/DataObject";
+import { StoreApi } from "zustand";
+import { GenericStore } from "../types/GenericStore";
+import { ID } from "../types/ID";
 
 interface UseControllerOptions<T> {
-  validate?: (item: T) => string[];
+  validate?: (item: T | Partial<T>) => string[];
   onError?: (error: string) => void;
 }
 
 export function useController<T extends DataObject<T>>(
   initialValue: T,
   service: Service<T>,
-  localArray: T[] | null,
-  setLocalArray: (routes: T[]) => void,
+  store: StoreApi<GenericStore<T>>,
   options?: UseControllerOptions<T>
 ) {
   const [item, setItem] = useState<T>(initialValue)
   const [loading, setLoading] = useState(false)
   const [errors, setErrors] = useState<string[]>([])
-
+  // Local
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target
     setItem(prev => ({ ...prev, [name]: value }))
   }
 
-  const validateItem = (data: T): boolean => {
+  const validateItem = (data: T | Partial<T>): boolean => {
     if (options?.validate) {
       const validationErrors = options.validate(data)
       setErrors(validationErrors)
@@ -43,9 +45,12 @@ export function useController<T extends DataObject<T>>(
     console.error('Controller error:', error)
   }
 
-  const handleCreate = (item: T, onSuccess?: (newItem: T) => void) => {
+  const getCurrentItems = (): T[] => {
+    return store.getState().items ?? []
+  }
+
+  const handleCreate = (item: Partial<T>, onSuccess?: (newItem: T) => void) => {
     if (!validateItem(item)) return
-    console.log("hola");
 
     try {
       setLoading(true)
@@ -54,9 +59,12 @@ export function useController<T extends DataObject<T>>(
       setErrors([])
       onSuccess?.(newItem)
 
-      const updatedRoutes = [...(localArray ?? []), item]
-      setLocalArray(updatedRoutes)
-      console.log('Nueva ruta creada:', item)
+      const currentItems: T[] = getCurrentItems()
+      store.getState().setItems([newItem, ...currentItems])
+      console.log('Nueva ruta creada:', newItem)
+      console.log("data", handleGetAllData());
+      console.log("data", handleGetAllDict());
+
 
     } catch (error) {
       console.error('Error updating item:', error)
@@ -75,11 +83,12 @@ export function useController<T extends DataObject<T>>(
         // const updated = await service.update(item)
         setErrors([])
         onSuccess?.(item)
+        const currentItems: T[] = getCurrentItems()
+        store.getState().setItems([...currentItems.map((r) => (r.id === item.id ? item : r))])
+        console.log('Ruta editada:', item)
+        console.log("data", handleGetAllData());
+        console.log("data", handleGetAllDict());
       }
-
-      const updatedRoutes = localArray ? localArray.map((r) => (r.id === item.id ? item : r)) : [item]
-      setLocalArray(updatedRoutes)
-      console.log('Ruta editada:', item)
 
     } catch (error) {
       console.error('Error updating item:', error)
@@ -96,9 +105,11 @@ export function useController<T extends DataObject<T>>(
       setErrors([])
       onSuccess?.()
 
-      const updatedRoutes = localArray ? [...localArray.filter((ele) => ele.id !== id), item] : [item]
-      setLocalArray(updatedRoutes)
-      console.log('Ruta eliminada:', item)
+      const currentItems: T[] = getCurrentItems()
+      store.getState().setItems(currentItems.filter((ele) => ele.id !== id))
+      console.log('Ruta eliminada con id:', id, item)
+      console.log("data", handleGetAllData());
+      console.log("data", handleGetAllDict());
 
     } catch (error) {
       console.error('Error deleting item:', error)
@@ -117,6 +128,20 @@ export function useController<T extends DataObject<T>>(
       onSuccess?.(fetchedItem as T)
     } catch (error) {
       handleError(error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleGetAllDict = (): Map<ID, T> => {
+    setLoading(true)
+    setErrors([])
+
+    try {
+      return service.getAllDict()
+    } catch (error) {
+      handleError(error)
+      return new Map()
     } finally {
       setLoading(false)
     }

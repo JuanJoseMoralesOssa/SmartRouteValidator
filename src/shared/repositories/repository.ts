@@ -53,7 +53,7 @@ export interface Count {
 
 
 export abstract class Repository<T> {
-  abstract create(entity: T, options?: Options): T;
+  abstract create(entity: Partial<T>, options?: Options): T;
   abstract createAll(entities: DataObject<T>[], options?: Options): T[];
   abstract save(entity: T, options?: Options): Promise<T>;
   abstract find(filter?: Filter<T>, options?: Options): (T & Relations)[];

@@ -24,7 +24,7 @@ export abstract class Service<T> {
   /**
    * Crear una nueva entidad
    */
-  create(entity: T): T {
+  create(entity: Partial<T>): T {
     return this.repository.create(entity);
   }
 
@@ -172,6 +172,10 @@ export abstract class Service<T> {
 
   getAll(): T[] {
     return this.repository.getAllData()
+  }
+
+  getAllDict(): Map<ID, T> {
+    return this.repository.getAllDataDict()
   }
 
 }
