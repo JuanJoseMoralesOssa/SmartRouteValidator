@@ -18,13 +18,16 @@ function Home() {
   }, [routes, setRoutes, handleGetAllData])
 
   return (
-    <div className='min-h-screen max-w-7xl my-0 mx-auto p-2 text-center bg-gradient-to-br from-blue-50 via-white to-indigo-50'>
-      <div className='container mx-auto px-4 py-8 space-y-8'>
-        <HomeHeader routes={routes} />
-        <ErrorAlert />
-        <ActionSection />
-        <MainContent />
-        <Footer />
+    <div className='min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50'>
+      {/* Espaciado para el header fijo */}
+      <div className='pt-4'>
+        <div className='container mx-auto px-4 py-8 space-y-8 max-w-7xl'>
+          <HomeHeader routes={routes} />
+          <ErrorAlert />
+          <ActionSection />
+          <MainContent />
+          <Footer />
+        </div>
       </div>
     </div>
   )

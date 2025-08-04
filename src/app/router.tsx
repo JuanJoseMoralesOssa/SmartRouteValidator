@@ -1,14 +1,20 @@
 import Home from "@/features/home/components/organisms/Home"
 import { BrowserRouter, Route, Routes } from "react-router-dom"
 import NotFound from "./pages/NotFound"
+import Cities from "@/features/city/components/organisms/Cities"
+import CityDetail from "@/features/city/components/molecules/CityDetail"
+import AppLayout from "./pages/AppLayout"
 
 const AppRoutes = () => {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<Home />} />
-        {/* {/* <Route path="/routes" element={<Routes />} /> */}
-        <Route path="*" element={<NotFound />} />
+        <Route path="/" element={<AppLayout />}>
+          <Route index element={<Home />} />
+          <Route path="cities" element={<Cities />} />
+          <Route path="cities/:id" element={<CityDetail />} />
+          <Route path="*" element={<NotFound />} />
+        </Route>
       </Routes>
     </BrowserRouter>
 

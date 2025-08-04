@@ -1,5 +1,50 @@
 @import 'tailwindcss';
 
+/* Estilos para el header y navegación */
+.mobile-nav-slide {
+  animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Estilos para el menú hamburguesa */
+.hamburger-line {
+  transition: all 0.3s ease-in-out;
+  transform-origin: center;
+}
+
+/* Animaciones para hover states */
+.card-hover {
+  transition: all 0.2s ease-in-out;
+}
+
+.card-hover:hover {
+  transform: translateY(-2px);
+}
+
+/* Backdrop blur para navegación en home */
+.nav-home-blur {
+  backdrop-filter: blur(10px);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* Estilos para botones de navegación */
+.nav-button {
+  transition: all 0.2s ease-in-out;
+}
+
+.nav-button:hover {
+  transform: translateY(-1px);
+}
 
 /* Estilos adicionales para el modal */
 .modal-backdrop {

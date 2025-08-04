@@ -261,7 +261,7 @@ export default function CityModalForm({ isOpen, onClose, onSubmit, initialData }
             placeholder="🏙️, 🌆, 🌃... o escribe tu propio emoji"
           />
           <p className="text-xs text-gray-500 mt-1">Selecciona de la galería o escribe tu propio emoji</p>
-          <div className="mt-2 flex flex-wrap gap-2">
+          <div className="mt-2 flex flex-wrap gap-2 items-center justify-center">
             {defaultIcons.map((iconOption) => {
               const isSelected = selectedIcon === iconOption.value
               return (
