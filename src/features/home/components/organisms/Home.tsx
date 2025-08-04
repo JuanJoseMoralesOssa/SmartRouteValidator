@@ -4,7 +4,8 @@ import { useRouteController } from '@/features/route/hooks/useRouteController'
 import ErrorAlert from '../atoms/ErrorAlert'
 import HomeHeader from '../molecules/HomeHeader'
 import Footer from '@/shared/components/atoms/Footer'
-import RouteContent from '@/features/route/components/organisms/RouteContent'
+import ActionSection from '../molecules/ActionSection'
+import MainContent from '@/features/route/components/organisms/MainContent'
 
 function Home() {
   const { items: routes, setItems: setRoutes } = useRouteStore()
@@ -21,7 +22,8 @@ function Home() {
       <div className='container mx-auto px-4 py-8 space-y-8'>
         <HomeHeader routes={routes} />
         <ErrorAlert />
-        <RouteContent />
+        <ActionSection />
+        <MainContent />
         <Footer />
       </div>
     </div>

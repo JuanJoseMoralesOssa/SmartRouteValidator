@@ -25,7 +25,7 @@ export function useController<T extends DataObject<T>>(
     setItem(prev => ({ ...prev, [name]: value }))
   }
 
-  const validateItem = (data: T | Partial<T>): boolean => {
+  const validateItem = (data: T): boolean => {
     if (options?.validate) {
       const validationErrors = options.validate(data)
       setErrors(validationErrors)
@@ -49,7 +49,7 @@ export function useController<T extends DataObject<T>>(
     return store.getState().items ?? []
   }
 
-  const handleCreate = (item: Partial<T>, onSuccess?: (newItem: T) => void) => {
+  const handleCreate = (item: T, onSuccess?: (newItem: T) => void) => {
     if (!validateItem(item)) return
 
     try {
@@ -73,8 +73,9 @@ export function useController<T extends DataObject<T>>(
     }
   }
 
-  const handleUpdate = async (onSuccess?: (updatedItem: T) => void) => {
+  const handleUpdate = async (item: T, onSuccess?: (updatedItem: T) => void) => {
     if (!validateItem(item)) return
+    console.log("hola", item);
 
     setLoading(true)
     try {

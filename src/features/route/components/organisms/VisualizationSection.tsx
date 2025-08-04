@@ -1,4 +1,4 @@
-import RouteVisualization from "@/features/route/components/RouteVisualization"
+import RouteVisualization from "./RouteVisualization"
 
 function VisualizationSection() {
   return (

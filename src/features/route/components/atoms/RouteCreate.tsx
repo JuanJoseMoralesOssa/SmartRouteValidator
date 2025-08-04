@@ -1,23 +1,24 @@
 import { useModal } from '@/shared/hooks/useModal'
 import RouteModalForm from '../atoms/RouteModalForm'
-import useRouteStore from '../../stores/useRouteStore'
 import { useRouteController } from '../../hooks/useRouteController'
+import ActionButton from '@/shared/components/atoms/ActionButton'
 
 const RouteCreate = () => {
     const { isOpen, openModal, closeModal } = useModal()
-    const { item } = useRouteStore()
     const { handleCreate } = useRouteController()
-
     return (
         <div>
-            <button onClick={openModal} className="btn-primary">
+            <ActionButton
+                onClick={openModal}
+                aria-label="Agregar nueva ruta"
+            >
                 Agregar Nueva Ruta
-            </button>
+            </ActionButton>
             <RouteModalForm
                 isOpen={isOpen}
                 onClose={closeModal}
                 onSubmit={handleCreate}
-                initialData={item ?? undefined}
+                initialData={undefined}
             />
         </div>
     )

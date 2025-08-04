@@ -10,7 +10,7 @@ export function useCityController() {
     useCityStore,
     {
       validate: (city) =>
-        city.name.trim() === ''
+        city.name?.trim() === ''
           ? ['El nombre es requerido.']
           : []
     }

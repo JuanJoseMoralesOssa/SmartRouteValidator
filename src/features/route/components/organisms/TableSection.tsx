@@ -1,4 +1,4 @@
-import RoutesTable from "@/features/route/components/RouteTable"
+import RoutesTable from "./RouteTable"
 
 function TableSection() {
   return (

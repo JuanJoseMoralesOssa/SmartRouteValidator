@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import useRouteStore from '../stores/useRouteStore'
+import useRouteStore from '../../stores/useRouteStore'
 
 const RouteVisualization = () => {
     const { items: routes } = useRouteStore()
@@ -104,7 +104,6 @@ const RouteVisualization = () => {
                     <line x1="1" y1="22" x2="23" y2="22" stroke="${color}" stroke-width="1.5"/>
                 </svg>`,
 
-                // Diseño 4: Ciudad con torres y cúpulas
                 `<svg width="800px" height="800px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <!-- Torre con cúpula central -->
                     <rect x="10" y="10" width="4" height="12" fill="${color}"/>

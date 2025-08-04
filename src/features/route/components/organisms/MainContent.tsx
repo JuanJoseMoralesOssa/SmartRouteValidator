@@ -1,5 +1,5 @@
-import TableSection from "../molecules/TableSection"
-import VisualizationSection from "../molecules/VisualizationSection"
+import TableSection from "./TableSection"
+import VisualizationSection from "./VisualizationSection"
 
 function MainContent() {
   return (

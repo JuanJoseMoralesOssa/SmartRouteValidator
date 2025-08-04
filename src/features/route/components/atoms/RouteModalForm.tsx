@@ -4,12 +4,18 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { Route } from '@/shared/types/entities/Route'
 import { DEFAULTCITY } from '@constants/cts'
 import Modal from '@/shared/components/atoms/Modal'
+import { useEffect } from 'react'
 
 const formSchema = z.object({
   origin: z.string().min(1, 'Requerido'),
   destiny: z.string().min(1, 'Requerido'),
-  cost: z.number().min(0, 'Debe ser mayor o igual a 0'),
+  cost: z.union([
+    z.number().min(0, 'Debe ser mayor o igual a 0'),
+    z.nan(),
+    z.undefined()
+  ]).optional(),
   intermediateStops: z.string().optional(),
+  id: z.string().optional().or(z.number().optional()).or(z.null()),
 })
 
 type FormValues = z.infer<typeof formSchema>
@@ -17,8 +23,8 @@ type FormValues = z.infer<typeof formSchema>
 interface RouteModalFormProps {
   isOpen: boolean
   onClose: () => void
-  onSubmit: (data: Partial<Route>) => void
-  initialData?: Partial<Route>
+  onSubmit: (data: Route) => void
+  initialData?: Route
 }
 
 export default function RouteModalForm({ isOpen, onClose, onSubmit, initialData }: Readonly<RouteModalFormProps>) {
@@ -26,26 +32,45 @@ export default function RouteModalForm({ isOpen, onClose, onSubmit, initialData 
     register,
     handleSubmit,
     formState: { errors },
+    reset,
   } = useForm<FormValues>({
     resolver: zodResolver(formSchema),
-    defaultValues: {
-      origin: initialData?.origin?.name ?? DEFAULTCITY.name,
-      destiny: initialData?.destiny?.name ?? DEFAULTCITY.name,
-      cost: initialData?.cost ?? 0,
-      intermediateStops: initialData?.intermediateStops?.join(', ') ?? '',
-    },
   })
 
+  // Resetear el formulario cada vez que cambien los datos iniciales o se abra el modal
+  useEffect(() => {
+    if (isOpen) {
+      const resetValues = {
+        origin: initialData?.origin?.name ?? DEFAULTCITY.name,
+        destiny: initialData?.destiny?.name ?? DEFAULTCITY.name,
+        cost: initialData?.cost,
+        intermediateStops: initialData?.intermediateStops?.join(', ') ?? '',
+        id: initialData?.id,
+      }
+      reset(resetValues)
+    } else {
+      // Limpiar completamente el formulario cuando se cierra
+      reset({
+        origin: '',
+        destiny: '',
+        cost: undefined,
+        intermediateStops: '',
+        id: undefined,
+      })
+    }
+  }, [isOpen, initialData, reset])
+
   const submitForm = (values: FormValues) => {
-    const route: Partial<Route> = {
+    const route: Route = {
       origin: { name: values.origin, color: '' },
       destiny: { name: values.destiny, color: '' },
-      cost: values.cost,
+      cost: (values.cost !== undefined && !isNaN(values.cost)) ? values.cost : 0,
       intermediateStops: values.intermediateStops
         ? values.intermediateStops.split(',').map((s) => s.trim())
         : [],
       isDirectRoute:
         !values.intermediateStops || values.intermediateStops.trim().length === 0,
+      id: values.id ?? undefined,
     }
     onSubmit(route)
     onClose()
@@ -81,7 +106,10 @@ export default function RouteModalForm({ isOpen, onClose, onSubmit, initialData 
           <input
             type="number"
             id='cost'
-            {...register('cost', { valueAsNumber: true })}
+            {...register('cost', {
+              valueAsNumber: true,
+              setValueAs: (v) => v === '' ? undefined : Number(v)
+            })}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
           {errors.cost && <p className="text-red-500 text-sm">{errors.cost.message}</p>}

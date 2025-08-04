@@ -11,6 +11,23 @@ Una cosa muy interesante que logre visualizar con la arquitectura
 
 El repositorio implementa buenas practicas como que devuelve una copia de el diccionario
 
+
+Implemente un repositorio que maneja como almacenamiento un diccionario, debido a que
+ el proyecto era principamente un crud que realizaba sus operaciones por medio de IDs,
+ por tanto un diccionario es una buena opcion para manejar las entidades,
+ ya que permite un acceso rapido a los datos, y ademas permite manejar las entidades,
+ sin necesidad de recorrer una lista o un array, lo que mejora el rendimiento. Aunque
+ aveces si necesito recorrer el diccionario para buscar una entidad por un atributo;
+ el objetivo del proyecto no es hacer un sistema de busqueda avanzado y como lo dice el problema,
+ se centraba en el manejo de las rutas principalmente cuando se crean y actualizan y el diccionario
+ me da una mayor velocidad cuando quiero actualizar una entidad.
+
+ El sistema no lo pense para manejar una gran cantidad de datos, por lo que
+ no implemente una paginacion de los datos, ya que el objetivo del proyecto no es
+ manejar una gran cantidad de datos, sino que se centra en el manejo de las rutas. Por tanto,
+ de ser un array no tendria una ventaja significativa ya que al ser pocos datos no me demoro en
+ recorrerlos.
+
 Validar:
   Se ha tratado de seguir las buenas practicas de arquitectura limpia, y de atomic design,
   separando las responsabilidades de los controladores, servicios y repositorios.
@@ -75,3 +92,20 @@ Posibilidades de mejora:
   devuelve una copia del diccionario, no implementa la paginacion de los datos,
   por lo que si se tiene un gran volumen de datos, se tendria que implementar
   una paginacion para no cargar todos los datos de una sola vez.
+
+Estas dos son mejoras que van mas por la parte de lo que esta bien tener, yo me enfoque en que
+el proyecto este lo suficientemente bueno, y cumpla con los requisitos funcionales del problema,
+estas mejoras no afectan directamente a los requisitos funcionales y por tanto no vi una necesidad de
+implementarlas en este momento, pero si son mejoras que se pueden implementar en un futuro.
+  Implementar un datasource que se conecte con index DB para que cuando
+  refresque la pagina, se mantengan los datos en el navegador,
+  y no se pierdan al recargar la pagina.
+
+  Realizar una prueba de carga para ver el rendimiento, y como se comporta
+  la aplicacion con un gran volumen de datos, y si es necesario implementar
+  mejoras en la arquitectura o en la forma de manejar los datos.
+
+  Esto me mostro que aveces lo suficientemente bueno es suficiente para un proyecto,
+  y que no siempre es necesario implementar todas las mejoras posibles, pero si es importante
+  tener en cuenta que siempre se pueden realizar mejoras en el futuro. Pero si no se afecta en
+  un grado significativo a los requisitos funcionales, no es necesario implementarlas.
