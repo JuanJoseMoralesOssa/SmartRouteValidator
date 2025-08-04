@@ -10,9 +10,10 @@ const RouteCreate = () => {
         <div>
             <ActionButton
                 onClick={openModal}
-                aria-label="Agregar nueva ruta"
+                aria-label="Crear nueva ruta"
+                icon="🛣️"
             >
-                Agregar Nueva Ruta
+                Crear Ruta
             </ActionButton>
             <RouteModalForm
                 isOpen={isOpen}

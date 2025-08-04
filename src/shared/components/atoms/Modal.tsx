@@ -43,37 +43,39 @@ function Modal({ isOpen, onClose, title, children, className = '' }: ModalProps)
         onClick={onClose}
         aria-hidden="true"
       />
-      <dialog className={`bg-white rounded-xl shadow-2xl w-full max-w-md relative modal-content-enter ${className}`} open>
-        {/* Header con título y botón X */}
-        <div className="flex justify-between items-center p-6 pb-4 border-b border-gray-100">
-          <h2 className="text-xl font-semibold text-gray-800">{title}</h2>
-          <button
-            onClick={onClose}
-            className="modal-close-btn"
-            aria-label="Cerrar modal"
-          >
-            <svg
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-              className="w-6 h-6"
+      <dialog className={`bg-white rounded-xl shadow-2xl w-full max-w-md h-screen max-h-[90vh] relative modal-content-enter ${className}`} open>
+        <div className="flex flex-col h-full">
+          {/* Header con título y botón X */}
+          <div className="flex justify-between items-center p-6 pb-4 border-b border-gray-100 flex-shrink-0">
+            <h2 className="text-xl font-semibold text-gray-800">{title}</h2>
+            <button
+              onClick={onClose}
+              className="modal-close-btn"
+              aria-label="Cerrar modal"
             >
-              <path
-                d="M18 6L6 18M6 6L18 18"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-          </button>
-        </div>
+              <svg
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+                className="w-6 h-6"
+              >
+                <path
+                  d="M18 6L6 18M6 6L18 18"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </button>
+          </div>
 
-        {/* Contenido del modal */}
-        <div className="px-6 pb-6">
-          {children}
+          {/* Contenido del modal */}
+          <div className="px-6 pb-6 pt-3 overflow-y-auto flex-1">
+            {children}
+          </div>
         </div>
       </dialog>
     </div>,

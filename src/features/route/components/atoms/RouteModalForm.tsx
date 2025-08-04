@@ -82,7 +82,7 @@ export default function RouteModalForm({ isOpen, onClose, onSubmit, initialData 
       onClose={onClose}
       title={initialData ? 'Editar Ruta' : 'Nueva Ruta'}
     >
-      <form onSubmit={handleSubmit(submitForm)} className="space-y-4">
+      <form onSubmit={handleSubmit(submitForm)} className="space-y-4 flex flex-col justify-between h-full">
         <div>
           <label htmlFor='origin' className="block text-sm font-medium">Ciudad de Origen</label>
           <input

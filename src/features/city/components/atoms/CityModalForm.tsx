@@ -39,6 +39,22 @@ const defaultColors = [
   '#F8C471', '#82E0AA', '#AED6F1', '#F1948A', '#D2B4DE'
 ]
 
+// Íconos predefinidos para ciudades
+const defaultIcons = [
+  { value: '🏙️', label: 'Ciudad General' },
+  { value: '🌆', label: 'Ciudad al Atardecer' },
+  { value: '🌃', label: 'Ciudad Nocturna' },
+  { value: '🏢', label: 'Edificios Corporativos' },
+  { value: '🗼', label: 'Torre/Monumento' },
+  { value: '🏰', label: 'Castillo/Ciudad Histórica' },
+  { value: '🌉', label: 'Ciudad con Puente' },
+  { value: '🏛️', label: 'Ciudad Clásica' },
+  { value: '🕌', label: 'Ciudad Árabe' },
+  { value: '⛩️', label: 'Ciudad Asiática' },
+  { value: '🏖️', label: 'Ciudad Costera' },
+  { value: '⛰️', label: 'Ciudad Montañosa' },
+]
+
 const getRandomItem = <T,>(array: T[]): T => {
   return array[Math.floor(Math.random() * array.length)]
 }
@@ -46,6 +62,7 @@ const getRandomItem = <T,>(array: T[]): T => {
 export default function CityModalForm({ isOpen, onClose, onSubmit, initialData }: Readonly<CityModalFormProps>) {
   const [selectedColor, setSelectedColor] = useState('')
   const [selectedSvgType, setSelectedSvgType] = useState('')
+  const [selectedIcon, setSelectedIcon] = useState('')
 
   const {
     register,
@@ -60,6 +77,7 @@ export default function CityModalForm({ isOpen, onClose, onSubmit, initialData }
 
   const watchedColor = watch('color')
   const watchedSvgType = watch('svgType')
+  const watchedIcon = watch('icon')
 
   // Resetear el formulario cada vez que cambien los datos iniciales o se abra el modal
   useEffect(() => {
@@ -67,17 +85,19 @@ export default function CityModalForm({ isOpen, onClose, onSubmit, initialData }
       // Usar el color existente o seleccionar uno aleatorio de la paleta de colores única
       const defaultColor = initialData?.color || getRandomItem(defaultColors)
       const defaultSvgType = initialData ? 'classic' : getRandomItem(svgTypes).value
+      const defaultIcon = initialData?.name ? '' : getRandomItem(defaultIcons).value
 
       const resetValues = {
         name: initialData?.name ?? '',
         color: defaultColor,
         svgType: defaultSvgType,
-        icon: initialData?.name ? `${initialData.name}_icon` : '',
+        icon: defaultIcon,
         id: initialData?.id,
       }
 
       setSelectedColor(defaultColor)
       setSelectedSvgType(defaultSvgType)
+      setSelectedIcon(defaultIcon)
       reset(resetValues)
     } else {
       // Limpiar completamente el formulario cuando se cierra
@@ -98,6 +118,10 @@ export default function CityModalForm({ isOpen, onClose, onSubmit, initialData }
     if (watchedSvgType) setSelectedSvgType(watchedSvgType)
   }, [watchedSvgType])
 
+  useEffect(() => {
+    if (watchedIcon) setSelectedIcon(watchedIcon)
+  }, [watchedIcon])
+
   const submitForm = (values: FormValues) => {
     const city: City = {
       name: values.name,
@@ -115,7 +139,7 @@ export default function CityModalForm({ isOpen, onClose, onSubmit, initialData }
     const SvgComponent = svgType.component
     return (
       <div className="flex items-center justify-center p-4 border rounded-md bg-gray-50">
-        <SvgComponent color={selectedColor || '#3B82F6'} width={64} height={64} />
+        <SvgComponent color={selectedColor || '#FF6B6B'} width={64} height={64} />
       </div>
     )
   }
@@ -188,6 +212,38 @@ export default function CityModalForm({ isOpen, onClose, onSubmit, initialData }
               </option>
             ))}
           </select>
+          <p className="text-xs text-gray-500 mt-1">O selecciona visualmente de la galería</p>
+          <div className="mt-2 grid grid-cols-4 gap-3">
+            {svgTypes.map((svg) => {
+              const SvgComponent = svg.component
+              const isSelected = selectedSvgType === svg.value
+              return (
+                <button
+                  key={svg.value}
+                  type="button"
+                  onClick={() => {
+                    setSelectedSvgType(svg.value)
+                    setValue('svgType', svg.value)
+                  }}
+                  className={`p-3 rounded-lg border-2 transition-all duration-200 hover:scale-105 ${isSelected
+                    ? 'border-blue-500 bg-blue-50 shadow-md'
+                    : 'border-gray-300 hover:border-gray-400'
+                    }`}
+                  title={svg.label}
+                  aria-label={`Seleccionar ${svg.label}`}
+                >
+                  <div className="flex flex-col items-center space-y-1">
+                    <SvgComponent
+                      color={selectedColor || '#6B7280'}
+                      width={40}
+                      height={40}
+                    />
+                    <span className="text-xs font-medium text-center">{svg.label.replace('Ciudad ', '').replace('Skyline ', '')}</span>
+                  </div>
+                </button>
+              )
+            })}
+          </div>
           {errors.svgType && <p className="text-red-500 text-sm">{errors.svgType.message}</p>}
         </div>
 
@@ -197,13 +253,40 @@ export default function CityModalForm({ isOpen, onClose, onSubmit, initialData }
         </div>
 
         <div>
-          <label htmlFor='icon' className="block text-sm font-medium">Ícono Personalizado (Opcional)</label>
+          <label htmlFor='icon' className="block text-sm font-medium">Ícono Personalizado</label>
           <input
             id='icon'
             {...register('icon')}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="🏙️, 🌆, 🌃..."
+            placeholder="🏙️, 🌆, 🌃... o escribe tu propio emoji"
           />
+          <p className="text-xs text-gray-500 mt-1">Selecciona de la galería o escribe tu propio emoji</p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {defaultIcons.map((iconOption) => {
+              const isSelected = selectedIcon === iconOption.value
+              return (
+                <button
+                  key={iconOption.value}
+                  type="button"
+                  onClick={() => {
+                    setSelectedIcon(iconOption.value)
+                    setValue('icon', iconOption.value)
+                  }}
+                  className={`p-2 rounded-lg border-2 transition-all duration-200 hover:scale-105 ${isSelected
+                    ? 'border-blue-500 bg-blue-50 shadow-md'
+                    : 'border-gray-300 hover:border-gray-400'
+                    }`}
+                  title={iconOption.label}
+                  aria-label={`Seleccionar ${iconOption.label}`}
+                >
+                  <div className="flex flex-col items-center space-y-1">
+                    <span className="text-2xl">{iconOption.value}</span>
+                    <span className="text-xs font-medium text-center leading-tight">{iconOption.label.replace('Ciudad ', '')}</span>
+                  </div>
+                </button>
+              )
+            })}
+          </div>
         </div>
 
         <div className="flex justify-end gap-2 pt-4">
