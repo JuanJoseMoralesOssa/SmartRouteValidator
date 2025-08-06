@@ -15,7 +15,7 @@ const ActionButton = ({
   className = '',
   ...props
 }: ActionButtonProps) => {
-  const baseClasses = 'inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-200 shadow-sm hover:shadow-md'
+  const baseClasses = 'inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-200 shadow-sm hover:shadow-md'
 
   const variantClasses = {
     primary: customColor

@@ -1,5 +1,3 @@
-import { useEffect } from 'react'
-import useRouteStore from '@/features/route/stores/useRouteStore'
 import { useRouteController } from '@/features/route/hooks/useRouteController'
 import ErrorAlert from '../atoms/ErrorAlert'
 import HomeHeader from '../molecules/HomeHeader'
@@ -8,14 +6,7 @@ import ActionSection from '../molecules/ActionSection'
 import MainContent from '@/features/route/components/organisms/MainContent'
 
 function Home() {
-  const { items: routes, setItems: setRoutes } = useRouteStore()
-  const { handleGetAllData } = useRouteController()
-
-  useEffect(() => {
-    if (routes === null) {
-      setRoutes(handleGetAllData())
-    }
-  }, [routes, setRoutes, handleGetAllData])
+  const { routes } = useRouteController()
 
   return (
     <div className='min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50'>

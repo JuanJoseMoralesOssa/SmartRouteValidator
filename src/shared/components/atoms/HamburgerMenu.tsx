@@ -3,7 +3,7 @@ interface HamburgerMenuProps {
   toggle: () => void
 }
 
-export default function HamburgerMenu({ isOpen, toggle }: HamburgerMenuProps) {
+export default function HamburgerMenu({ isOpen, toggle }: Readonly<HamburgerMenuProps>) {
   return (
     <button
       onClick={toggle}

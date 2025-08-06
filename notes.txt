@@ -93,6 +93,12 @@ Posibilidades de mejora:
   por lo que si se tiene un gran volumen de datos, se tendria que implementar
   una paginacion para no cargar todos los datos de una sola vez.
 
+  Implementar en la vista detalla de una ciudad que ademas de las rutas que se muestran,
+  se muestren los caminos que tienen varias rutas con origen o con destino que
+  tenga esa ciudad
+
+  Que diga si es un hueco o si es una fuente
+
 Estas dos son mejoras que van mas por la parte de lo que esta bien tener, yo me enfoque en que
 el proyecto este lo suficientemente bueno, y cumpla con los requisitos funcionales del problema,
 estas mejoras no afectan directamente a los requisitos funcionales y por tanto no vi una necesidad de

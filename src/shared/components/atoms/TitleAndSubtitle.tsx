@@ -1,4 +1,4 @@
-export default function Header() {
+export default function TitleAndSubtitle() {
   return (
     <header className="text-center">
       <h1 className='text-5xl font-bold text-gray-800 mb-4 leading-tight'>

@@ -13,7 +13,7 @@ function VisualizationSection() {
             Mapa interactivo de conexiones entre ciudades
           </p>
         </div>
-        <div className='p-6'>
+        <div className='p-1 md:p-6'>
           <RouteVisualization />
         </div>
       </div>

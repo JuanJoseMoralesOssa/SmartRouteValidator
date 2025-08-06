@@ -2,9 +2,10 @@ import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Route } from '@/shared/types/entities/Route'
-import { DEFAULTCITY } from '@constants/cts'
+import { DEFAULT_CITY } from '@constants/cts'
 import Modal from '@/shared/components/atoms/Modal'
 import { useEffect } from 'react'
+import { CitySvgEnum } from '@/features/city/enums/CitySvgEnum'
 
 const formSchema = z.object({
   origin: z.string().min(1, 'Requerido'),
@@ -41,8 +42,8 @@ export default function RouteModalForm({ isOpen, onClose, onSubmit, initialData 
   useEffect(() => {
     if (isOpen) {
       const resetValues = {
-        origin: initialData?.origin?.name ?? DEFAULTCITY.name,
-        destiny: initialData?.destiny?.name ?? DEFAULTCITY.name,
+        origin: initialData?.origin?.name ?? DEFAULT_CITY.name,
+        destiny: initialData?.destiny?.name ?? DEFAULT_CITY.name,
         cost: initialData?.cost,
         intermediateStops: initialData?.intermediateStops?.join(', ') ?? '',
         id: initialData?.id,
@@ -62,8 +63,8 @@ export default function RouteModalForm({ isOpen, onClose, onSubmit, initialData 
 
   const submitForm = (values: FormValues) => {
     const route: Route = {
-      origin: { name: values.origin, color: '' },
-      destiny: { name: values.destiny, color: '' },
+      origin: { name: values.origin, color: '#FF6B6B', svgType: CitySvgEnum.Classic },
+      destiny: { name: values.destiny, color: '#4ECDC4', svgType: CitySvgEnum.Classic },
       cost: (values.cost !== undefined && !isNaN(values.cost)) ? values.cost : 0,
       intermediateStops: values.intermediateStops
         ? values.intermediateStops.split(',').map((s) => s.trim())
@@ -80,9 +81,10 @@ export default function RouteModalForm({ isOpen, onClose, onSubmit, initialData 
     <Modal
       isOpen={isOpen}
       onClose={onClose}
+      className='max-h-fit h-fit overflow-y-auto'
       title={initialData ? 'Editar Ruta' : 'Nueva Ruta'}
     >
-      <form onSubmit={handleSubmit(submitForm)} className="space-y-4 flex flex-col justify-between h-full">
+      <form onSubmit={handleSubmit(submitForm)} className="space-y-4 flex flex-col justify-between h-fit">
         <div>
           <label htmlFor='origin' className="block text-sm font-medium">Ciudad de Origen</label>
           <input

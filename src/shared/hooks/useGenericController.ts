@@ -1,8 +1,6 @@
 import { useState } from "react"
 import { Service } from "../services/service";
 import { DataObject } from "../types/DataObject";
-import { StoreApi } from "zustand";
-import { GenericStore } from "../types/GenericStore";
 import { ID } from "../types/ID";
 
 interface UseControllerOptions<T> {
@@ -11,19 +9,11 @@ interface UseControllerOptions<T> {
 }
 
 export function useController<T extends DataObject<T>>(
-  initialValue: T,
   service: Service<T>,
-  store: StoreApi<GenericStore<T>>,
   options?: UseControllerOptions<T>
 ) {
-  const [item, setItem] = useState<T>(initialValue)
   const [loading, setLoading] = useState(false)
   const [errors, setErrors] = useState<string[]>([])
-  // Local
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target
-    setItem(prev => ({ ...prev, [name]: value }))
-  }
 
   const validateItem = (data: T): boolean => {
     if (options?.validate) {
@@ -45,9 +35,6 @@ export function useController<T extends DataObject<T>>(
     console.error('Controller error:', error)
   }
 
-  const getCurrentItems = (): T[] => {
-    return store.getState().items ?? []
-  }
 
   const handleCreate = (item: T, onSuccess?: (newItem: T) => void) => {
     if (!validateItem(item)) return
@@ -55,15 +42,8 @@ export function useController<T extends DataObject<T>>(
     try {
       setLoading(true)
       const newItem = service.create(item)
-      setItem(newItem)
       setErrors([])
       onSuccess?.(newItem)
-
-      const currentItems: T[] = getCurrentItems()
-      store.getState().setItems([newItem, ...currentItems])
-      console.log('Nueva ruta creada:', newItem)
-      console.log("data", handleGetAllData());
-      console.log("data", handleGetAllDict());
 
 
     } catch (error) {
@@ -84,8 +64,7 @@ export function useController<T extends DataObject<T>>(
         // const updated = await service.update(item)
         setErrors([])
         onSuccess?.(item)
-        const currentItems: T[] = getCurrentItems()
-        store.getState().setItems([...currentItems.map((r) => (r.id === item.id ? item : r))])
+
         console.log('Ruta editada:', item)
         console.log("data", handleGetAllData());
         console.log("data", handleGetAllDict());
@@ -102,13 +81,9 @@ export function useController<T extends DataObject<T>>(
     setLoading(true)
     try {
       await service.deleteById(id)
-      setItem(initialValue)
       setErrors([])
       onSuccess?.()
 
-      const currentItems: T[] = getCurrentItems()
-      store.getState().setItems(currentItems.filter((ele) => ele.id !== id))
-      console.log('Ruta eliminada con id:', id, item)
       console.log("data", handleGetAllData());
       console.log("data", handleGetAllDict());
 
@@ -125,7 +100,6 @@ export function useController<T extends DataObject<T>>(
 
     try {
       const fetchedItem = await service.findById(id)
-      setItem(fetchedItem as T)
       onSuccess?.(fetchedItem as T)
     } catch (error) {
       handleError(error)
@@ -164,12 +138,9 @@ export function useController<T extends DataObject<T>>(
 
 
   return {
-    item,
-    setItem,
     loading,
     errors,
     setErrors,
-    handleChange,
     handleCreate,
     handleUpdate,
     handleDelete,

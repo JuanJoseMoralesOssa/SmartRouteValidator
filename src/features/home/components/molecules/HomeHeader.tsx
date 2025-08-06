@@ -1,6 +1,6 @@
 import { Route } from '@/shared/types/entities/Route';
 import StatisticsCards from '../atoms/staticsCards/StatisticsCards';
-import Header from '@/shared/components/atoms/Header';
+import TitleAndSubtitle from '@/shared/components/atoms/TitleAndSubtitle';
 
 interface HeaderProps {
   routes?: Route[] | null;
@@ -9,7 +9,7 @@ interface HeaderProps {
 function HomeHeader({ routes }: Readonly<HeaderProps>) {
   return (
     <div className='text-center space-y-4'>
-      <Header />
+      <TitleAndSubtitle />
       <StatisticsCards routes={routes} />
     </div>
   )

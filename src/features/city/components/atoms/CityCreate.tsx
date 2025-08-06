@@ -12,7 +12,7 @@ const CityCreate = () => {
                 onClick={openModal}
                 aria-label="Crear nueva ciudad"
                 icon="🏙️"
-                customColor="#10B981"
+                customColor="#006600"
             >
                 Crear Ciudad
             </ActionButton>

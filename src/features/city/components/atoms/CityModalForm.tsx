@@ -4,10 +4,8 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { City } from '@/shared/types/entities/City'
 import Modal from '@/shared/components/atoms/Modal'
 import { useEffect, useState } from 'react'
-import ClassicCitySVG from '@/shared/components/atoms/svgs/ClassicCitySVG'
-import DomedCitySVG from '@/shared/components/atoms/svgs/DomedCitySVG'
-import FuturisticCitySVG from '@/shared/components/atoms/svgs/FuturisticCitySVG'
-import SkylineSVG from '@/shared/components/atoms/svgs/SkylineSVG'
+import { DEFAULT_ICONS, CITY_SVG_TYPES } from '../../constants/cts'
+import { DEFAULT_COLORS } from '@/shared/constants/cts'
 
 const formSchema = z.object({
   name: z.string().min(1, 'El nombre es requerido'),
@@ -26,36 +24,7 @@ interface CityModalFormProps {
   initialData?: City
 }
 
-const svgTypes = [
-  { value: 'classic', label: 'Ciudad Clásica', component: ClassicCitySVG },
-  { value: 'domed', label: 'Ciudad con Cúpulas', component: DomedCitySVG },
-  { value: 'futuristic', label: 'Ciudad Futurista', component: FuturisticCitySVG },
-  { value: 'skyline', label: 'Skyline Moderno', component: SkylineSVG },
-]
-
-const defaultColors = [
-  '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7',
-  '#DDA0DD', '#98D8C8', '#F7DC6F', '#BB8FCE', '#85C1E9',
-  '#F8C471', '#82E0AA', '#AED6F1', '#F1948A', '#D2B4DE'
-]
-
-// Íconos predefinidos para ciudades
-const defaultIcons = [
-  { value: '🏙️', label: 'Ciudad General' },
-  { value: '🌆', label: 'Ciudad al Atardecer' },
-  { value: '🌃', label: 'Ciudad Nocturna' },
-  { value: '🏢', label: 'Edificios Corporativos' },
-  { value: '🗼', label: 'Torre/Monumento' },
-  { value: '🏰', label: 'Castillo/Ciudad Histórica' },
-  { value: '🌉', label: 'Ciudad con Puente' },
-  { value: '🏛️', label: 'Ciudad Clásica' },
-  { value: '🕌', label: 'Ciudad Árabe' },
-  { value: '⛩️', label: 'Ciudad Asiática' },
-  { value: '🏖️', label: 'Ciudad Costera' },
-  { value: '⛰️', label: 'Ciudad Montañosa' },
-]
-
-const getRandomItem = <T,>(array: T[]): T => {
+const getRandomItem = <T,>(array: ReadonlyArray<T>): T => {
   return array[Math.floor(Math.random() * array.length)]
 }
 
@@ -83,9 +52,9 @@ export default function CityModalForm({ isOpen, onClose, onSubmit, initialData }
   useEffect(() => {
     if (isOpen) {
       // Usar el color existente o seleccionar uno aleatorio de la paleta de colores única
-      const defaultColor = initialData?.color || getRandomItem(defaultColors)
-      const defaultSvgType = initialData ? 'classic' : getRandomItem(svgTypes).value
-      const defaultIcon = initialData?.name ? '' : getRandomItem(defaultIcons).value
+      const defaultColor = initialData?.color || getRandomItem(DEFAULT_COLORS)
+      const defaultSvgType = initialData ? 'classic' : getRandomItem(CITY_SVG_TYPES).value
+      const defaultIcon = initialData?.name ? '' : getRandomItem(DEFAULT_ICONS).value
 
       const resetValues = {
         name: initialData?.name ?? '',
@@ -126,6 +95,8 @@ export default function CityModalForm({ isOpen, onClose, onSubmit, initialData }
     const city: City = {
       name: values.name,
       color: values.color,
+      svgType: values.svgType,
+      icon: values.icon ?? undefined,
       id: values.id ?? undefined,
     }
     onSubmit(city)
@@ -133,7 +104,7 @@ export default function CityModalForm({ isOpen, onClose, onSubmit, initialData }
   }
 
   const renderSvgPreview = () => {
-    const svgType = svgTypes.find(svg => svg.value === selectedSvgType)
+    const svgType = CITY_SVG_TYPES.find(svg => svg.value === selectedSvgType)
     if (!svgType) return null
 
     const SvgComponent = svgType.component
@@ -148,6 +119,7 @@ export default function CityModalForm({ isOpen, onClose, onSubmit, initialData }
     <Modal
       isOpen={isOpen}
       onClose={onClose}
+      className='h-screen'
       title={initialData ? 'Editar Ciudad' : 'Nueva Ciudad'}
     >
       <form onSubmit={handleSubmit(submitForm)} className="space-y-4">
@@ -180,7 +152,7 @@ export default function CityModalForm({ isOpen, onClose, onSubmit, initialData }
           </div>
           <p className="text-xs text-gray-500 mt-1">Selecciona de la paleta o usa el selector de color personalizado</p>
           <div className="mt-2 grid grid-cols-8 gap-1">
-            {defaultColors.map((color) => (
+            {DEFAULT_COLORS.map((color) => (
               <button
                 key={color}
                 type="button"
@@ -206,7 +178,7 @@ export default function CityModalForm({ isOpen, onClose, onSubmit, initialData }
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <option value="">Selecciona un tipo...</option>
-            {svgTypes.map((svg) => (
+            {CITY_SVG_TYPES.map((svg) => (
               <option key={svg.value} value={svg.value}>
                 {svg.label}
               </option>
@@ -214,7 +186,7 @@ export default function CityModalForm({ isOpen, onClose, onSubmit, initialData }
           </select>
           <p className="text-xs text-gray-500 mt-1">O selecciona visualmente de la galería</p>
           <div className="mt-2 grid grid-cols-4 gap-3">
-            {svgTypes.map((svg) => {
+            {CITY_SVG_TYPES.map((svg) => {
               const SvgComponent = svg.component
               const isSelected = selectedSvgType === svg.value
               return (
@@ -262,7 +234,7 @@ export default function CityModalForm({ isOpen, onClose, onSubmit, initialData }
           />
           <p className="text-xs text-gray-500 mt-1">Selecciona de la galería o escribe tu propio emoji</p>
           <div className="mt-2 flex flex-wrap gap-2 items-center justify-center">
-            {defaultIcons.map((iconOption) => {
+            {DEFAULT_ICONS.map((iconOption) => {
               const isSelected = selectedIcon === iconOption.value
               return (
                 <button

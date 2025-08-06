@@ -1,12 +1,10 @@
 import ActionButton from "@/shared/components/atoms/ActionButton"
 import RouteEdit from "../atoms/RouteEdit"
-import useRouteStore from "../../stores/useRouteStore"
 import { useRouteController } from "../../hooks/useRouteController"
 import { Route } from "@/shared/types/entities/Route"
 
 function TableBody() {
-  const { items: routes, setItem: setRoute } = useRouteStore()
-  const { handleDelete } = useRouteController()
+  const { handleDelete, routes, setRoute } = useRouteController()
   const onEditRoute = (route: Route) => {
     setRoute(route)
   }
@@ -35,7 +33,7 @@ function TableBody() {
             </div>
           </td>
           <td className='px-6 py-5 whitespace-nowrap'>
-            <span className='text-sm font-bold text-green-600 bg-green-50 px-4 py-2 rounded-full border border-green-200'>
+            <span className='text-sm font-bold text-green-600 bg-green-100 px-4 py-2 rounded-full border border-green-200'>
               ${route.cost.toFixed(2)}
             </span>
           </td>
@@ -71,7 +69,7 @@ function TableBody() {
                   ))}
                 </div>
               ) : (
-                <span className='text-gray-400 italic text-sm'>Sin escalas</span>
+                <span className='italic text-sm default-scales-text-color'>Sin escalas</span>
               )}
             </div>
           </td>

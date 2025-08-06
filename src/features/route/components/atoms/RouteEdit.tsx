@@ -1,6 +1,5 @@
 import { useModal } from '@/shared/hooks/useModal'
 import RouteModalForm from '../atoms/RouteModalForm'
-import useRouteStore from '../../stores/useRouteStore'
 import { useRouteController } from '../../hooks/useRouteController'
 import { Route } from '@/shared/types/entities/Route'
 import ActionButton from '@/shared/components/atoms/ActionButton'
@@ -12,7 +11,6 @@ interface RouteEditProps {
 
 const RouteEdit = ({ route, onEditRoute }: RouteEditProps) => {
   const { isOpen, openModal, closeModal } = useModal()
-  const { item } = useRouteStore()
   const { handleUpdate } = useRouteController()
 
   const handleClick = () => {
@@ -34,7 +32,7 @@ const RouteEdit = ({ route, onEditRoute }: RouteEditProps) => {
         isOpen={isOpen}
         onClose={closeModal}
         onSubmit={handleUpdate}
-        initialData={item ?? undefined}
+        initialData={route ?? undefined}
       />
     </>
   )

@@ -43,7 +43,7 @@ function Modal({ isOpen, onClose, title, children, className = '' }: ModalProps)
         onClick={onClose}
         aria-hidden="true"
       />
-      <dialog className={`bg-white rounded-xl shadow-2xl w-full max-w-md h-screen max-h-[90vh] relative modal-content-enter ${className}`} open>
+      <dialog className={`bg-white rounded-xl shadow-2xl w-full max-w-md h-fit max-h-[90vh] relative modal-content-enter ${className}`} open>
         <div className="flex flex-col h-full">
           {/* Header con título y botón X */}
           <div className="flex justify-between items-center p-6 pb-4 border-b border-gray-100 flex-shrink-0">

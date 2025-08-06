@@ -26,7 +26,7 @@ export default function AppHeader({ onMenuToggle, isMenuOpen }: Readonly<AppHead
   }
 
   return (
-    <header className={`bg-gradient-to-r from-blue-50 via-blue-50 to-blue-100 border-b border-gray-200 px-4 py-3 ${isHome ? 'bg-transparent border-transparent' : ''}`}>
+    <header className={`bg-gradient-to-r from-blue-50 via-blue-50 to-white border-b border-gray-200 px-4 py-3 ${isHome ? 'bg-transparent border-transparent' : ''}`}>
       <div className="flex items-center justify-between max-w-7xl mx-auto">
         {/* Logo y menú hamburguesa */}
         <div className="flex items-center gap-4">

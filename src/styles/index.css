@@ -1,5 +1,9 @@
 @import 'tailwindcss';
 
+.default-scales-text-color {
+  @apply text-[#53576A];
+}
+
 /* Estilos para el header y navegación */
 .mobile-nav-slide {
   animation: slideDown 0.3s ease-out;
