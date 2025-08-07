@@ -67,6 +67,12 @@ export default function CityModalForm({ isOpen, onClose, onSubmit, initialData }
     component: svg.component
   }))
 
+  // Función para obtener el label actual del tipo SVG seleccionado
+  const getCurrentSvgLabel = () => {
+    const currentOption = svgTypeOptions.find(opt => opt.value === selectedSvgType)
+    return currentOption ? String(currentOption.label) : ''
+  }
+
   // Handler para la selección de tipo SVG
   const handleSvgTypeSelect = (option: AutocompleteOption | null) => {
     if (option) {
@@ -210,7 +216,7 @@ export default function CityModalForm({ isOpen, onClose, onSubmit, initialData }
             displayKey="label"
             placeholder="Buscar tipo de ícono..."
             onSelect={handleSvgTypeSelect}
-            initialValue=""
+            initialValue={getCurrentSvgLabel()}
             required
             clearable
             noOptionsText="No se encontraron tipos de íconos"
