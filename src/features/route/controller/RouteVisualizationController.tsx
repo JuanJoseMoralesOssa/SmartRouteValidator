@@ -131,17 +131,27 @@ export class RouteVisualizationController {
     startY: number,
     endX: number,
     endY: number,
-    isDirectRoute: boolean,
     isHighlighted: boolean = false
   ) {
+    // Validar que todas las coordenadas son números finitos
+    if (!Number.isFinite(startX) || !Number.isFinite(startY) ||
+      !Number.isFinite(endX) || !Number.isFinite(endY)) {
+      console.warn('Invalid coordinates for route drawing:', { startX, startY, endX, endY })
+      return
+    }
+
+    // Validar que las coordenadas no son iguales (evitar líneas de longitud cero)
+    if (startX === endX && startY === endY) {
+      console.warn('Start and end coordinates are the same, skipping route')
+      return
+    }
+
     const opacity = isHighlighted ? 1 : 0.8
     const lineWidth = isHighlighted ? 4 : 2.5
 
     // Crear gradiente para la línea usando constantes
     const gradient = ctx.createLinearGradient(startX, startY, endX, endY)
-    const colors = isDirectRoute
-      ? this.VISUALIZATION_CONFIG.DIRECT_ROUTE_COLORS
-      : this.VISUALIZATION_CONFIG.INDIRECT_ROUTE_COLORS
+    const colors = this.VISUALIZATION_CONFIG.DIRECT_ROUTE_COLORS
 
     gradient.addColorStop(0, `rgba(${this.hexToRgb(colors.START)}, ${opacity})`)
     gradient.addColorStop(1, `rgba(${this.hexToRgb(colors.END)}, ${opacity})`)
@@ -294,16 +304,43 @@ export class RouteVisualizationController {
    */
   static calculateCityPositions(cities: City[], canvas: HTMLCanvasElement): Map<string, { x: number; y: number }> {
     const positions = new Map<string, { x: number; y: number }>()
+
+    // Validar parámetros de entrada
+    if (!cities.length || !canvas.width || !canvas.height) {
+      console.warn('Invalid parameters for city position calculation:', {
+        citiesLength: cities.length,
+        canvasWidth: canvas.width,
+        canvasHeight: canvas.height
+      })
+      return positions
+    }
+
     const radius = Math.min(canvas.width, canvas.height) * this.VISUALIZATION_CONFIG.CANVAS_RADIUS_FACTOR
     const centerX = canvas.width / 2
     const centerY = canvas.height / 2
 
+    // Validar que los valores calculados son finitos
+    if (!Number.isFinite(radius) || !Number.isFinite(centerX) || !Number.isFinite(centerY)) {
+      console.warn('Invalid calculated values:', { radius, centerX, centerY })
+      return positions
+    }
+
     cities.forEach((city, index) => {
+      if (!city.name) {
+        console.warn('City without name found, skipping:', city)
+        return
+      }
+
       const angle = (index * 2 * Math.PI) / cities.length
-      positions.set(city.name, {
-        x: centerX + radius * Math.cos(angle),
-        y: centerY + radius * Math.sin(angle),
-      })
+      const x = centerX + radius * Math.cos(angle)
+      const y = centerY + radius * Math.sin(angle)
+
+      // Validar que las coordenadas calculadas son finitas
+      if (Number.isFinite(x) && Number.isFinite(y)) {
+        positions.set(city.name, { x, y })
+      } else {
+        console.warn('Invalid position calculated for city:', city.name, { x, y, angle, index })
+      }
     })
 
     return positions
@@ -347,6 +384,16 @@ export class RouteVisualizationController {
       const destination = positions.get(route.destiny?.name || '')
 
       if (origin && destination && route.origin?.name && route.destiny?.name) {
+        // Validar que las posiciones son válidas antes de calcular los puntos
+        if (!Number.isFinite(origin.x) || !Number.isFinite(origin.y) ||
+          !Number.isFinite(destination.x) || !Number.isFinite(destination.y)) {
+          console.warn('Invalid origin or destination coordinates:', {
+            origin, destination,
+            routeId: route.id
+          })
+          return
+        }
+
         const { startX, startY, endX, endY } = this.calculateLinePoints(
           origin.x,
           origin.y,
@@ -355,7 +402,20 @@ export class RouteVisualizationController {
           totalOffset
         )
 
+        // Validar que los puntos calculados son válidos
+        if (!Number.isFinite(startX) || !Number.isFinite(startY) ||
+          !Number.isFinite(endX) || !Number.isFinite(endY)) {
+          console.warn('Invalid calculated line points:', {
+            startX, startY, endX, endY,
+            routeId: route.id
+          })
+          return
+        }
+
         const isHighlighted = route.id && highlightedRouteIds ? highlightedRouteIds.has(route.id) : false
+
+        // Por defecto tratamos todas las rutas como directas
+        // Puedes ajustar esta lógica según las propiedades de tu modelo Route
 
         this.drawRoute(
           ctx,
@@ -363,7 +423,6 @@ export class RouteVisualizationController {
           startY,
           endX,
           endY,
-          route.isDirectRoute || false,
           isHighlighted
         )
       }
@@ -443,16 +502,47 @@ export class RouteVisualizationController {
     validRoutes: Route[],
     highlightedRouteIds?: Set<string | number>
   ): Promise<void> {
+    // Validar parámetros de entrada
+    if (!canvas || !ctx) {
+      console.error('Invalid canvas or context provided to initializeVisualization')
+      return
+    }
+
+    if (!Number.isFinite(canvas.width) || !Number.isFinite(canvas.height) ||
+      canvas.width <= 0 || canvas.height <= 0) {
+      console.error('Invalid canvas dimensions:', { width: canvas.width, height: canvas.height })
+      return
+    }
+
     // Limpiar y dibujar fondo
     ctx.clearRect(0, 0, canvas.width, canvas.height)
     this.drawBackground(ctx, canvas.width, canvas.height)
 
+    // Validar que hay rutas para procesar
+    if (!validRoutes || validRoutes.length === 0) {
+      console.log('No valid routes to visualize')
+      return
+    }
+
     // Obtener ciudades únicas
     const cities = this.getUniqueCities(validRoutes)
+
+    if (cities.length === 0) {
+      console.warn('No cities found in valid routes')
+      return
+    }
+
     const cityColors = this.getCityColors(cities)
 
     // Calcular posiciones
     const positions = this.calculateCityPositions(cities, canvas)
+
+    // Debug información si hay problemas
+    if (positions.size === 0) {
+      console.error('No valid positions calculated for cities')
+      this.debugVisualizationData(validRoutes, cities, positions)
+      return
+    }
 
     // Cargar imágenes
     const cityImages = await this.loadCityImages(cities)
@@ -492,6 +582,13 @@ export class RouteVisualizationController {
    */
   static normalizeVector(dx: number, dy: number): { unitX: number; unitY: number } {
     const distance = Math.sqrt(dx * dx + dy * dy)
+
+    // Evitar división por cero
+    if (distance === 0 || !Number.isFinite(distance)) {
+      console.warn('Invalid distance for vector normalization:', { dx, dy, distance })
+      return { unitX: 0, unitY: 0 }
+    }
+
     return {
       unitX: dx / distance,
       unitY: dy / distance
@@ -508,9 +605,25 @@ export class RouteVisualizationController {
     destY: number,
     offset: number
   ): { startX: number; startY: number; endX: number; endY: number } {
+    // Validar parámetros de entrada
+    if (!Number.isFinite(originX) || !Number.isFinite(originY) ||
+      !Number.isFinite(destX) || !Number.isFinite(destY) ||
+      !Number.isFinite(offset)) {
+      console.warn('Invalid parameters for line points calculation:', {
+        originX, originY, destX, destY, offset
+      })
+      return { startX: 0, startY: 0, endX: 0, endY: 0 }
+    }
+
     const dx = destX - originX
     const dy = destY - originY
     const { unitX, unitY } = this.normalizeVector(dx, dy)
+
+    // Validar que los vectores unitarios son válidos
+    if (!Number.isFinite(unitX) || !Number.isFinite(unitY)) {
+      console.warn('Invalid unit vectors calculated:', { unitX, unitY })
+      return { startX: originX, startY: originY, endX: destX, endY: destY }
+    }
 
     return {
       startX: originX + unitX * offset,
@@ -531,10 +644,10 @@ export class RouteVisualizationController {
       START: '#4FC3F7',
       END: '#29B6F6'
     },
-    INDIRECT_ROUTE_COLORS: {
-      START: '#FF7043',
-      END: '#FF5722'
-    },
+    // INDIRECT_ROUTE_COLORS: {
+    //   START: '#FF7043',
+    //   END: '#FF5722'
+    // },
     BACKGROUND_COLORS: {
       START: '#1a1a2e',
       MIDDLE: '#16213e',
@@ -547,5 +660,37 @@ export class RouteVisualizationController {
    */
   static getTotalOffset(): number {
     return this.VISUALIZATION_CONFIG.CIRCLE_RADIUS + this.VISUALIZATION_CONFIG.LINE_MARGIN
+  }
+
+  /**
+   * Método de debugging para inspeccionar rutas y ciudades
+   */
+  static debugVisualizationData(validRoutes: Route[], cities: City[], positions: Map<string, { x: number; y: number }>): void {
+    console.group('🔍 Route Visualization Debug Info')
+
+    console.log('📊 Valid Routes:', validRoutes.length)
+    validRoutes.forEach((route, index) => {
+      console.log(`  Route ${index + 1}:`, {
+        id: route.id,
+        origin: route.origin?.name,
+        destiny: route.destiny?.name,
+        hasValidOrigin: !!route.origin?.name,
+        hasValidDestiny: !!route.destiny?.name
+      })
+    })
+
+    console.log('🏙️ Cities:', cities.length)
+    cities.forEach((city, index) => {
+      const position = positions.get(city.name)
+      console.log(`  City ${index + 1}:`, {
+        name: city.name,
+        id: city.id,
+        position: position ? { x: position.x, y: position.y } : 'No position',
+        hasValidPosition: position ? Number.isFinite(position.x) && Number.isFinite(position.y) : false
+      })
+    })
+
+    console.log('📍 Position Map size:', positions.size)
+    console.groupEnd()
   }
 }

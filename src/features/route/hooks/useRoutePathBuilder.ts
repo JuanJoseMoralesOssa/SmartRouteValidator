@@ -7,18 +7,20 @@ import useRouteStore from '../stores/useRouteStore'
 export const useRoutePathBuilder = () => {
   const store = useRouteStore()
 
+  const { routes, highlightedRouteIds, isRouteHighlighted, getHighlightedRoutes } = store
+
   // Memoizar rutas disponibles para optimizar rendimiento
   const availableRoutes = useMemo(() =>
-    store.routes.filter(route =>
-      route.id && !store.isRouteHighlighted(route.id)
+    routes.filter(route =>
+      route.id && !isRouteHighlighted(route.id)
     ),
-    [store.routes, store.highlightedRouteIds, store.isRouteHighlighted]
+    [routes, highlightedRouteIds, isRouteHighlighted]
   )
 
   // Memoizar rutas resaltadas
   const highlightedRoutes = useMemo(() =>
-    store.getHighlightedRoutes(),
-    [store.routes, store.highlightedRouteIds, store.getHighlightedRoutes]
+    getHighlightedRoutes(),
+    [routes, highlightedRouteIds, getHighlightedRoutes]
   )
 
   // Funciones de utilidad para construcción de caminos
@@ -65,8 +67,6 @@ export const useRoutePathBuilder = () => {
     // Obtener información del camino actual
     getPathInfo: () => ({
       totalRoutes: highlightedRoutes.length,
-      directRoutes: highlightedRoutes.filter(r => r.isDirectRoute).length,
-      indirectRoutes: highlightedRoutes.filter(r => !r.isDirectRoute).length,
       cities: Array.from(new Set([
         ...highlightedRoutes.map(r => r.origin?.name),
         ...highlightedRoutes.map(r => r.destiny?.name)

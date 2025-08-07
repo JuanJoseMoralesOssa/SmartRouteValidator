@@ -9,6 +9,4 @@ export interface Route {
     destiny: City
     cost: number
     color?: string
-    isDirectRoute: boolean
-    intermediateStops?: string[]
 }

@@ -16,16 +16,16 @@ function TableHead() {
           <span className='text-lg'>💰</span>
           <span>Costo</span>
         </TableHeaderCell>
-        <TableHeaderCell>
+        {/* <TableHeaderCell>
           <span className='text-lg'>✈️</span>
           <span>Tipo de Ruta</span>
-        </TableHeaderCell>
-        <th className='px-6 py-5 text-left text-xs font-bold text-gray-700 uppercase tracking-wider min-w-[160px]'>
+        </TableHeaderCell> */}
+        {/* <th className='px-6 py-5 text-left text-xs font-bold text-gray-700 uppercase tracking-wider min-w-[160px]'>
           <div className='flex items-center space-x-2'>
             <span className='text-lg'>🛑</span>
             <span>Escalas</span>
           </div>
-        </th>
+        </th> */}
         <th className='px-6 py-5 text-right text-xs font-bold text-gray-700 uppercase tracking-wider min-w-[180px]'>
           <div className='flex items-center justify-end space-x-2'>
             <span className='text-lg'>⚙️</span>

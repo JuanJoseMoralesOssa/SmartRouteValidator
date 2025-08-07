@@ -13,7 +13,8 @@ function WithScalesCard({ routes }: Readonly<WithScalesCardProps>) {
       <div>
         <p className='text-sm font-medium text-gray-600'>Con Escalas</p>
         <p className='text-2xl font-bold text-orange-600'>
-          {routes?.filter(r => !r.isDirectRoute).length || 0}
+          {/* {routes?.filter(r => !r.isDirectRoute).length || 0} */}
+          {routes?.length || 0}
         </p>
       </div>
       <StatIcon className="bg-orange-100">🔄</StatIcon>

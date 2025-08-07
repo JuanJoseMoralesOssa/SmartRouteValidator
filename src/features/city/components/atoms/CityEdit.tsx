@@ -2,7 +2,6 @@ import { useModal } from '@/shared/hooks/useModal'
 import CityModalForm from './CityModalForm'
 import ActionButton from '@/shared/components/atoms/ActionButton'
 import { City } from '@/shared/types/entities/City'
-import useCityStore from '../../stores/useCityStore'
 import { useCityController } from '../../hooks/useCityController'
 
 interface CityEditProps {
@@ -12,7 +11,6 @@ interface CityEditProps {
 
 const CityEdit = ({ city, onEditCity }: CityEditProps) => {
   const { isOpen, openModal, closeModal } = useModal()
-  const { item } = useCityStore()
   const { handleUpdate } = useCityController()
 
   const handleClick = () => {
@@ -34,7 +32,7 @@ const CityEdit = ({ city, onEditCity }: CityEditProps) => {
         isOpen={isOpen}
         onClose={closeModal}
         onSubmit={handleUpdate}
-        initialData={item ?? undefined}
+        initialData={city ?? undefined}
       />
     </>
   )

@@ -2,6 +2,7 @@ import { City } from "@/shared/types/entities/City";
 import { cityService } from "../services/CityService";
 import useCityStore from "../stores/useCityStore";
 import { useState } from "react";
+import { mockCities } from "@/shared/types/mocks/MockCities";
 
 
 interface UseCityControllerOptions {
@@ -36,7 +37,7 @@ export function useCityController(options?: UseCityControllerOptions) {
     return true;
   };
 
-  // Crear nueva ruta
+  // Crear nueva ciudad
   const handleCreate = (cityData: City, onSuccess?: (newCity: City) => void) => {
     if (!validateCity(cityData)) return;
 
@@ -45,11 +46,11 @@ export function useCityController(options?: UseCityControllerOptions) {
       const newCity = cityService.create(cityData);
       setErrors([]);
 
-      // Usar el método correcto del store de rutas
+      // Usar el método correcto del store de ciudads
       store.addCity(newCity);
 
       onSuccess?.(newCity);
-      console.log('Nueva ruta creada:', newCity);
+      console.log('Nueva ciudad creada:', newCity);
 
     } catch (error) {
       console.error('Error creating city:', error);
@@ -61,12 +62,12 @@ export function useCityController(options?: UseCityControllerOptions) {
     }
   };
 
-  // Actualizar ruta existente
+  // Actualizar ciudad existente
   const handleUpdate = async (cityData: Partial<City>, onSuccess?: (updatedCity: City) => void) => {
     const id = cityData.id;
     if (!id) {
-      setErrors(['ID de ruta es requerido para actualizar.']);
-      options?.onError?.('ID de ruta es requerido para actualizar.');
+      setErrors(['ID de ciudad es requerido para actualizar.']);
+      options?.onError?.('ID de ciudad es requerido para actualizar.');
       return;
     }
 
@@ -80,11 +81,11 @@ export function useCityController(options?: UseCityControllerOptions) {
       // Actualizar el store
       store.updateCity(id, cityData);
 
-      // Obtener la ruta actualizada del store para el callback
+      // Obtener la ciudad actualizada del store para el callback
       const updatedCity = store.cities.find(r => r.id === id);
       if (updatedCity) {
         onSuccess?.(updatedCity);
-        console.log('Ruta actualizada:', updatedCity);
+        console.log('Ciudad actualizada:', updatedCity);
       }
 
       setErrors([]);
@@ -99,17 +100,17 @@ export function useCityController(options?: UseCityControllerOptions) {
     }
   };
 
-  // Eliminar ruta
+  // Eliminar ciudad
   const handleDelete = async (id: string | number, onSuccess?: () => void) => {
     try {
       setLoading(true);
       await cityService.deleteById(id);
 
-      // Usar el método correcto del store de rutas
+      // Usar el método correcto del store de ciudads
       store.removeCity(id);
 
       onSuccess?.();
-      console.log('Ruta eliminada:', id);
+      console.log('Ciudad eliminada:', id);
 
     } catch (error) {
       console.error('Error deleting city:', error);
@@ -121,7 +122,7 @@ export function useCityController(options?: UseCityControllerOptions) {
     }
   };
 
-  // Obtener todas las rutas
+  // Obtener todas las ciudads
   const handleGetAll = () => {
     try {
       setLoading(true);
@@ -138,7 +139,7 @@ export function useCityController(options?: UseCityControllerOptions) {
     }
   };
 
-  // Obtener ruta por ID
+  // Obtener ciudad por ID
   const handleGetById = async (id: string | number) => {
     try {
       return await cityService.findById(id);
@@ -147,6 +148,19 @@ export function useCityController(options?: UseCityControllerOptions) {
       return null;
     }
   };
+
+
+  const loadExample = () => {
+    for (const city of store.cities) {
+      if (city.id) {
+        handleDelete(city.id);
+      }
+    }
+    for (const city of mockCities) {
+      handleCreate(city);
+    }
+  };
+
   return {
     // Estado
     loading,
@@ -165,5 +179,7 @@ export function useCityController(options?: UseCityControllerOptions) {
 
     city: store.city,
     setCity: store.setCity,
+
+    loadExample,
   };
 }

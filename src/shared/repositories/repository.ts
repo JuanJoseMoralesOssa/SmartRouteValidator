@@ -82,6 +82,7 @@ export class DictionaryRepository<T extends DataObject<T>> extends Repository<T>
     const id = entity.id ?? this.nextId++;
     const newEntity = { ...entity, id } as T;
     this.data.set(id, newEntity);
+    this.nextId = Math.max(this.nextId, Number(id) + 1);
     return structuredClone(newEntity);
   }
 

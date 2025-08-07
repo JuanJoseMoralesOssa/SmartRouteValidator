@@ -99,6 +99,14 @@ Posibilidades de mejora:
 
   Que diga si es un hueco o si es una fuente
 
+  Implementar un algoritmo que calcule las escalas entre todas las ciudades
+
+  Implementar que se le pueda cambiar el color a la ruta y que muestre el constructores
+
+  Implementar el autocomplete con
+    searchKeys={['name', 'country']}
+     minCharsToSearch={2}
+
 Estas dos son mejoras que van mas por la parte de lo que esta bien tener, yo me enfoque en que
 el proyecto este lo suficientemente bueno, y cumpla con los requisitos funcionales del problema,
 estas mejoras no afectan directamente a los requisitos funcionales y por tanto no vi una necesidad de

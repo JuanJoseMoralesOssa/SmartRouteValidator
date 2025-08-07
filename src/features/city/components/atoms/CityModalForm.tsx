@@ -6,6 +6,9 @@ import Modal from '@/shared/components/atoms/Modal'
 import { useEffect, useState } from 'react'
 import { DEFAULT_ICONS, CITY_SVG_TYPES } from '../../constants/cts'
 import { DEFAULT_COLORS } from '@/shared/constants/cts'
+import Autocomplete, { AutocompleteOption } from '@/shared/components/atoms/Autocomplete'
+import { useCityController } from '../../hooks/useCityController'
+import { mockCities } from '@/shared/types/mocks/MockCities'
 
 const formSchema = z.object({
   name: z.string().min(1, 'El nombre es requerido'),
@@ -32,6 +35,14 @@ export default function CityModalForm({ isOpen, onClose, onSubmit, initialData }
   const [selectedColor, setSelectedColor] = useState('')
   const [selectedSvgType, setSelectedSvgType] = useState('')
   const [selectedIcon, setSelectedIcon] = useState('')
+  const { cities, setCities } = useCityController()
+
+  // Inicializar las ciudades mock si no hay ciudades cargadas
+  useEffect(() => {
+    if (cities.length === 0) {
+      setCities(mockCities)
+    }
+  }, [cities.length, setCities])
 
   const {
     register,
@@ -48,13 +59,32 @@ export default function CityModalForm({ isOpen, onClose, onSubmit, initialData }
   const watchedSvgType = watch('svgType')
   const watchedIcon = watch('icon')
 
+  // Convertir tipos de SVG a opciones de autocomplete
+  const svgTypeOptions: AutocompleteOption[] = CITY_SVG_TYPES.map(svg => ({
+    id: svg.value,
+    label: svg.label,
+    value: svg.value,
+    component: svg.component
+  }))
+
+  // Handler para la selección de tipo SVG
+  const handleSvgTypeSelect = (option: AutocompleteOption | null) => {
+    if (option) {
+      setSelectedSvgType(option.value as string)
+      setValue('svgType', option.value as string)
+    } else {
+      setSelectedSvgType('')
+      setValue('svgType', '')
+    }
+  }
+
   // Resetear el formulario cada vez que cambien los datos iniciales o se abra el modal
   useEffect(() => {
     if (isOpen) {
       // Usar el color existente o seleccionar uno aleatorio de la paleta de colores única
       const defaultColor = initialData?.color || getRandomItem(DEFAULT_COLORS)
-      const defaultSvgType = initialData ? 'classic' : getRandomItem(CITY_SVG_TYPES).value
-      const defaultIcon = initialData?.name ? '' : getRandomItem(DEFAULT_ICONS).value
+      const defaultSvgType = initialData?.svgType || getRandomItem(CITY_SVG_TYPES).value
+      const defaultIcon = initialData?.icon || getRandomItem(DEFAULT_ICONS).value
 
       const resetValues = {
         name: initialData?.name ?? '',
@@ -77,6 +107,9 @@ export default function CityModalForm({ isOpen, onClose, onSubmit, initialData }
         icon: '',
         id: undefined,
       })
+      setSelectedColor('')
+      setSelectedSvgType('')
+      setSelectedIcon('')
     }
   }, [isOpen, initialData, reset])  // Actualizar estados locales cuando cambien los valores del formulario
   useEffect(() => {
@@ -171,19 +204,18 @@ export default function CityModalForm({ isOpen, onClose, onSubmit, initialData }
         </div>
 
         <div>
-          <label htmlFor='svgType' className="block text-sm font-medium">Tipo de Ícono</label>
-          <select
-            id='svgType'
-            {...register('svgType')}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="">Selecciona un tipo...</option>
-            {CITY_SVG_TYPES.map((svg) => (
-              <option key={svg.value} value={svg.value}>
-                {svg.label}
-              </option>
-            ))}
-          </select>
+          <Autocomplete
+            label="Tipo de Ícono"
+            options={svgTypeOptions}
+            displayKey="label"
+            placeholder="Buscar tipo de ícono..."
+            onSelect={handleSvgTypeSelect}
+            initialValue=""
+            required
+            clearable
+            noOptionsText="No se encontraron tipos de íconos"
+          />
+          {errors.svgType && <p className="text-red-500 text-sm">{errors.svgType.message}</p>}
           <p className="text-xs text-gray-500 mt-1">O selecciona visualmente de la galería</p>
           <div className="mt-2 grid grid-cols-4 gap-3">
             {CITY_SVG_TYPES.map((svg) => {

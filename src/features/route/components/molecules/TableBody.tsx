@@ -37,7 +37,7 @@ function TableBody() {
               ${route.cost.toFixed(2)}
             </span>
           </td>
-          <td className='px-6 py-5 whitespace-nowrap'>
+          {/* <td className='px-6 py-5 whitespace-nowrap'>
             <span className={`inline-flex items-center px-4 py-2 rounded-full text-sm font-medium shadow-sm ${route.isDirectRoute
               ? 'bg-blue-100 text-blue-800 border border-blue-200'
               : 'bg-yellow-100 text-yellow-800 border border-yellow-200'
@@ -54,8 +54,8 @@ function TableBody() {
                 </>
               )}
             </span>
-          </td>
-          <td className='px-6 py-5'>
+          </td> */}
+          {/* <td className='px-6 py-5'>
             <div className='text-sm text-gray-700'>
               {route.intermediateStops && route.intermediateStops.length > 0 ? (
                 <div className='flex flex-wrap gap-2'>
@@ -72,7 +72,7 @@ function TableBody() {
                 <span className='italic text-sm default-scales-text-color'>Sin escalas</span>
               )}
             </div>
-          </td>
+          </td> */}
           <td className='px-6 py-5 whitespace-nowrap text-right'>
             <div className='flex justify-end space-x-3'>
               <RouteEdit

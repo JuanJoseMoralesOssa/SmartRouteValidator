@@ -2,6 +2,7 @@ import { useState } from "react";
 import useRouteStore from "../stores/useRouteStore";
 import { Route } from "@/shared/types/entities/Route";
 import { routeService } from "../services/RouteService";
+import { mockRoutes } from "@/shared/types/mocks/MockRoutes";
 
 interface UseRouteControllerOptions {
   validate?: (route: Route | Partial<Route>) => string[];
@@ -86,7 +87,7 @@ export function useRouteController(options?: UseRouteControllerOptions) {
       const updatedRoute = store.routes.find(r => r.id === id);
       if (updatedRoute) {
         onSuccess?.(updatedRoute);
-        console.log('Ruta actualizada:', updatedRoute);
+        console.log('Ruta actualizada:', updatedRoute, routeData);
       }
 
       setErrors([]);
@@ -149,6 +150,18 @@ export function useRouteController(options?: UseRouteControllerOptions) {
       return null;
     }
   };
+
+  const loadExample = () => {
+    for (const route of store.routes) {
+      if (route.id) {
+        handleDelete(route.id);
+      }
+    }
+    for (const route of mockRoutes) {
+      handleCreate(route);
+    }
+  };
+
   return {
     // Estado
     loading,
@@ -175,5 +188,7 @@ export function useRouteController(options?: UseRouteControllerOptions) {
     toggleHighlightedRoute: store.toggleHighlightedRoute,
     clearHighlightedRoutes: store.clearHighlightedRoutes,
     isRouteHighlighted: store.isRouteHighlighted,
+
+    loadExample,
   };
 }
