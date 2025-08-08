@@ -47,7 +47,6 @@ export function useRouteController(options?: UseRouteControllerOptions) {
       setLoading(true);
       const newRoute = routeService.create(routeData);
       setErrors([]);
-
       // Usar el método correcto del store de rutas
       store.addRoute(newRoute);
 

@@ -1,50 +1,70 @@
 import { Route } from "../entities/Route";
-import { mockCities } from "./MockCities";
+import { newYork, losAngeles, chicago, houston } from "./MockCities";
+
+
 
 export const mockRoutes: Route[] = [
   {
-    origin: mockCities[0],
-    destiny: mockCities[1],
+    originId: newYork.id,
+    origin: newYork,
+    destinyId: losAngeles.id,
+    destiny: losAngeles,
     cost: 11,
   },
   {
-    origin: mockCities[0],
-    destiny: mockCities[1],
+    originId: newYork.id,
+    origin: newYork,
+    destinyId: losAngeles.id,
+    destiny: losAngeles,
     cost: 11,
   },
   {
-    origin: mockCities[0],
-    destiny: mockCities[2],
+    originId: newYork.id,
+    origin: newYork,
+    destinyId: chicago.id,
+    destiny: chicago,
     cost: 14,
   },
   {
-    origin: mockCities[0],
-    destiny: mockCities[2],
+    originId: newYork.id,
+    origin: newYork,
+    destinyId: chicago.id,
+    destiny: chicago,
     cost: 13,
   },
   {
-    origin: mockCities[1],
-    destiny: mockCities[2],
+    originId: losAngeles.id,
+    origin: losAngeles,
+    destinyId: chicago.id,
+    destiny: chicago,
     cost: 5,
   },
   {
-    origin: mockCities[2],
-    destiny: mockCities[1],
+    originId: chicago.id,
+    origin: chicago,
+    destinyId: losAngeles.id,
+    destiny: losAngeles,
     cost: 6,
   },
   {
-    origin: mockCities[2],
-    destiny: mockCities[3],
+    originId: chicago.id,
+    origin: chicago,
+    destinyId: houston.id,
+    destiny: houston,
     cost: 5,
   },
   {
-    origin: mockCities[2],
-    destiny: mockCities[3],
+    originId: chicago.id,
+    origin: chicago,
+    destinyId: houston.id,
+    destiny: houston,
     cost: 5,
   },
   {
-    origin: mockCities[3],
-    destiny: mockCities[2],
+    originId: houston.id,
+    origin: houston,
+    destinyId: chicago.id,
+    destiny: chicago,
     cost: 5,
   },
 ]

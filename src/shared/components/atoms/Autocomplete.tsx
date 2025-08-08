@@ -205,7 +205,7 @@ export default function Autocomplete({
         <div
           ref={listRef}
           id={`autocomplete-list-${label.replace(/\s+/g, '-').toLowerCase()}`}
-          className="max-h-60 overflow-y-auto flex flex-col"
+          className="max-h-60 overflow-y-auto flex flex-col "
           role="menu"
           aria-labelledby={`autocomplete-${label.replace(/\s+/g, '-').toLowerCase()}`}
         >

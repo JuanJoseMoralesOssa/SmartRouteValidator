@@ -123,6 +123,8 @@ export default function RouteModalForm({ isOpen, onClose, onSubmit, initialData 
     const destinyCity = selectedDestiny ?? { name: values.destiny, color: '#4ECDC4', svgType: CitySvgEnum.Classic }
 
     const route: Route = {
+      originId: originCity.id,
+      destinyId: destinyCity.id,
       origin: originCity,
       destiny: destinyCity,
       cost: (values.cost !== undefined && !isNaN(values.cost)) ? values.cost : 0,

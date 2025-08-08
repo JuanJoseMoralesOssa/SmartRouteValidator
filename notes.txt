@@ -28,6 +28,14 @@ Implemente un repositorio que maneja como almacenamiento un diccionario, debido 
  de ser un array no tendria una ventaja significativa ya que al ser pocos datos no me demoro en
  recorrerlos.
 
+ En los mocks se aplico el principio de abstraccion, para darle una mayor legibilidad al codigo y una mejor comprension
+
+ Se modifico el codigo original del trigger porque habia redundancia en los arreglos y solo con un arreglo de visitados era
+ sufiente para resolver el problema, ademas que se guardaba toda la entidad lo que consumia mas memoria, ahora solo guarda el id,
+ tambien se utilizo un diccionario y no un arreglo para mejorar el tiempo de respuesta O(n) con n variable a la longitud de elementos y
+ se cambio por un O(1) que es un tiempo constante.
+
+
 Validar:
   Se ha tratado de seguir las buenas practicas de arquitectura limpia, y de atomic design,
   separando las responsabilidades de los controladores, servicios y repositorios.
