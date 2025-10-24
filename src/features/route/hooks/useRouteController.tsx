@@ -5,19 +5,19 @@ import { routeService } from "../services/RouteService";
 import { mockRoutes } from "@/shared/types/mocks/MockRoutes";
 import { useToast } from "@/shared/hooks/toast/useToast";
 import { useConfirm } from "@/shared/hooks/toast/useConfirm";
+import { ID } from "@/shared/types/ID";
 
 interface UseRouteControllerOptions {
   validate?: (route: Route | Partial<Route>) => string[];
   onError?: (error: string) => void;
-  enableVisualization?: boolean; // Habilitar animación paso a paso
-  visualizationDelay?: number; // Delay entre pasos (ms)
+  enableVisualization?: boolean;
+  visualizationDelay?: number;
 }
 
+const DEFAULT_VALIDATION_DELAY = 500;
+
 /**
- * Hook simplificado para manejar rutas
- * - Validación pura (sin efectos secundarios)
- * - Visualización opcional y controlada
- * - Flujo claro y lineal
+ * Hook simplificado para manejar rutas con visualización opcional
  */
 export function useRouteController(options?: UseRouteControllerOptions) {
   const [loading, setLoading] = useState(false);
@@ -27,19 +27,59 @@ export function useRouteController(options?: UseRouteControllerOptions) {
   const toast = useToast();
   const confirm = useConfirm();
 
-  // Helper para pausar (visualización)
   const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-  // Validación
+  // Callback de visualización en tiempo real
+  const createVisualizationCallback = () => {
+    if (!options?.enableVisualization) return undefined;
+
+    const delay = options.visualizationDelay || DEFAULT_VALIDATION_DELAY;
+
+    return async (routeId: ID, action: 'add' | 'clear' | 'remove' | 'explore') => {
+      if (action === 'clear') {
+        console.log(`🧹 LIMPIANDO TODAS las rutas resaltadas y exploradas ANTES de iniciar validación`);
+        store.clearHighlightedRoutes();
+        store.clearExploredRoutes();
+        // Pequeño delay para asegurar que la UI se actualice
+        await sleep(100);
+        return;
+      }
+
+      if (action === 'explore') {
+        // Marcar como explorada (visitada pero descartada por backtracking)
+        console.log(`  🔍 Marcando ruta ${routeId} como explorada`);
+        store.addExploredRoute(routeId);
+        await sleep(delay / 2); // Delay más corto para exploradas
+        return;
+      }
+
+      if (action === 'remove') {
+        console.log(`  ➖ Quitando resaltado de ruta ${routeId} (backtrack)`);
+        store.removeHighlightedRoute(routeId);
+        await sleep(delay);
+        return;
+      }
+
+      // action === 'add'
+      // Verificar en el store si ya está resaltada (para evitar duplicados visuales)
+      if (store.isRouteHighlighted(routeId)) {
+        console.log(`  ⏭️ Ruta ${routeId} ya resaltada en el store, omitiendo`);
+        return;
+      }
+
+      console.log(`  ➡️ Resaltando ruta ${routeId} en tiempo real`);
+      store.addHighlightedRoute(routeId);
+      await sleep(delay);
+    };
+  };
+
+  // Validación básica
   const validateRoute = (routeToValidate: Route | Partial<Route>): boolean => {
     const defaultValidation = (route: Route | Partial<Route>) => {
-      if (!route.origin?.name || route.origin.name.trim() === '') {
-        return ['El nombre de origen es requerido.'];
-      }
-      if (!route.destiny?.name || route.destiny.name.trim() === '') {
-        return ['El nombre de destino es requerido.'];
-      }
-      return [];
+      const errors: string[] = [];
+      if (!route.origin?.name?.trim()) errors.push('El nombre de origen es requerido.');
+      if (!route.destiny?.name?.trim()) errors.push('El nombre de destino es requerido.');
+      return errors;
     };
 
     const validationErrors = options?.validate?.(routeToValidate) ?? defaultValidation(routeToValidate);
@@ -54,26 +94,33 @@ export function useRouteController(options?: UseRouteControllerOptions) {
     return true;
   };
 
-  // Crear nueva ruta con visualización opcional
+  // Crear nueva ruta con visualización en tiempo real en tiempo real
   const handleCreate = async (routeData: Route, onSuccess?: (newRoute: Route) => void) => {
     if (!validateRoute(routeData)) return;
 
+    setLoading(true);
+
     try {
-      setLoading(true);
-      store.clearHighlightedRoutes();
+      const visualizationCallback = createVisualizationCallback();
 
-      // Validar y crear (el servicio retorna las rutas exploradas)
-      const { route: newRoute, validation } = await routeService.createWithValidation(routeData);
-
-      // Visualizar el proceso si está habilitado
-      if (options?.enableVisualization && validation.exploredRoutes.length > 0) {
-        for (const routeId of validation.exploredRoutes) {
-          store.addHighlightedRoute(routeId);
-          await sleep(options.visualizationDelay || 500);
-        }
-      }
+      const { route: newRoute, validation } = await routeService.createWithValidation(
+        routeData,
+        visualizationCallback
+      );
 
       store.addRoute(newRoute);
+
+      // Mantener visible el resultado final por un momento si hay visualización
+      if (options?.enableVisualization && validation.exploredRoutes.length > 0) {
+        console.log(`⏸️ Mostrando resultado final por 2 segundos`);
+        await sleep(2000);
+      }
+
+      // SIEMPRE limpiar las rutas resaltadas al finalizar
+      console.log(`🧹 Limpiando rutas resaltadas al finalizar creación`);
+      store.clearHighlightedRoutes();
+      store.clearExploredRoutes();
+
       setErrors([]);
       onSuccess?.(newRoute);
       toast.success('Guardado con éxito');
@@ -84,43 +131,50 @@ export function useRouteController(options?: UseRouteControllerOptions) {
       setErrors([errorMessage]);
       options?.onError?.(errorMessage);
       toast.error(errorMessage);
+      // Limpiar rutas resaltadas en caso de error
+      store.clearHighlightedRoutes();
+      store.clearExploredRoutes();
     } finally {
       setLoading(false);
     }
-  };
-
-  // Actualizar ruta existente
+  };  // Actualizar ruta existente con visualización en tiempo real
   const handleUpdate = async (routeData: Partial<Route>, onSuccess?: (updatedRoute: Route) => void) => {
     const id = routeData.id;
     if (!id) {
-      setErrors(['ID de ruta es requerido para actualizar.']);
-      options?.onError?.('ID de ruta es requerido para actualizar.');
+      const errorMsg = 'ID de ruta es requerido para actualizar.';
+      setErrors([errorMsg]);
+      options?.onError?.(errorMsg);
       return;
     }
 
     if (!validateRoute(routeData)) return;
 
+    setLoading(true);
+
     try {
-      setLoading(true);
-      store.clearHighlightedRoutes();
+      const visualizationCallback = createVisualizationCallback();
 
-      // Validar y actualizar
-      const validation = await routeService.updateWithValidation(id, routeData);
-
-      // Visualizar el proceso si está habilitado
-      if (options?.enableVisualization && validation.exploredRoutes.length > 0) {
-        for (const routeId of validation.exploredRoutes) {
-          store.addHighlightedRoute(routeId);
-          await sleep(options.visualizationDelay || 500);
-        }
-      }
+      const validation = await routeService.updateWithValidation(
+        id,
+        routeData,
+        visualizationCallback
+      );
 
       store.updateRoute(id, routeData);
 
-      const updatedRoute = store.routes.find(r => r.id === id);
-      if (updatedRoute) {
-        onSuccess?.(updatedRoute);
+      // Mantener visible el resultado final por un momento si hay visualización
+      if (options?.enableVisualization && validation.exploredRoutes.length > 0) {
+        console.log(`⏸️ Mostrando resultado final por 2 segundos`);
+        await sleep(2000);
       }
+
+      // SIEMPRE limpiar las rutas resaltadas al finalizar
+      console.log(`🧹 Limpiando rutas resaltadas al finalizar actualización`);
+      store.clearHighlightedRoutes();
+      store.clearExploredRoutes();
+
+      const updatedRoute = store.routes.find(r => r.id === id);
+      if (updatedRoute) onSuccess?.(updatedRoute);
 
       setErrors([]);
       toast.success('Actualizado con éxito');
@@ -131,6 +185,9 @@ export function useRouteController(options?: UseRouteControllerOptions) {
       setErrors([errorMessage]);
       options?.onError?.(errorMessage);
       toast.error(errorMessage);
+      // Limpiar rutas resaltadas en caso de error
+      store.clearHighlightedRoutes();
+      store.clearExploredRoutes();
     } finally {
       setLoading(false);
     }
@@ -139,19 +196,11 @@ export function useRouteController(options?: UseRouteControllerOptions) {
     try {
       setLoading(true);
       await routeService.deleteById(id);
-
-      // Usar el método correcto del store de rutas
       store.removeRoute(id);
 
       onSuccess?.();
       console.log('Ruta eliminada:', id);
-      // confirm(
-      //   'Eliminar elemento',
-      //   '¿Estás seguro que deseas eliminar este registro?',
-      //   () => toast.success('Eliminado correctamente'),
-      //   () => toast.info('Cancelado')
-      // );
-      // descomenta en el otro codigo el use Confirm con toast
+
       confirm(
         'Eliminar elemento',
         '¿Estás seguro que deseas eliminar este registro?',
@@ -194,50 +243,49 @@ export function useRouteController(options?: UseRouteControllerOptions) {
     }
   };
 
-  // Cargar ejemplos con visualización opcional
+  // Cargar ejemplos con visualización en tiempo real
   const loadExample = async () => {
-    try {
-      setLoading(true);
+    setLoading(true);
 
+    try {
       // Eliminar todas las rutas existentes
       for (const route of store.routes) {
-        if (route.id) {
-          await routeService.deleteById(route.id);
-        }
+        if (route.id) await routeService.deleteById(route.id);
       }
 
-      // Limpiar todo de una vez
+      // Limpiar estado inicial
       store.setRoutes([]);
       store.clearHighlightedRoutes();
+      store.clearExploredRoutes();
 
-      // Acumular todas las nuevas rutas
       const newRoutes: Route[] = [];
 
       // Crear las rutas de ejemplo de forma secuencial
       for (const route of mockRoutes) {
         if (!validateRoute(route)) continue;
 
-        store.clearHighlightedRoutes();
+        const visualizationCallback = createVisualizationCallback();
 
-        // Validar y crear la ruta
-        const { route: newRoute, validation } = await routeService.createWithValidation(route);
+        const { route: newRoute, validation } = await routeService.createWithValidation(
+          route,
+          visualizationCallback
+        );
 
-        // Visualizar el proceso si está habilitado
+        newRoutes.push(newRoute);
+
+        // Mantener visible el resultado final por un momento si hay visualización
         if (options?.enableVisualization && validation.exploredRoutes.length > 0) {
-          for (const routeId of validation.exploredRoutes) {
-            store.addHighlightedRoute(routeId);
-            await sleep(options.visualizationDelay || 500);
-          }
-          // Limpiar antes de la siguiente ruta
-          await sleep(300);
-          store.clearHighlightedRoutes();
+          console.log(`⏸️ Mostrando resultado final por 1 segundo`);
+          await sleep(1000);
         }
 
-        // Acumular en lugar de agregar inmediatamente
-        newRoutes.push(newRoute);
+        // Limpiar después de cada ejemplo
+        console.log(`🧹 Limpiando rutas resaltadas después del ejemplo`);
+        store.clearHighlightedRoutes();
+        store.clearExploredRoutes();
       }
 
-      // Agregar todas las rutas de una sola vez para evitar múltiples re-renders
+      // Agregar todas las rutas de una vez
       store.setRoutes(newRoutes);
 
       toast.success('Ejemplos cargados correctamente');
@@ -248,7 +296,9 @@ export function useRouteController(options?: UseRouteControllerOptions) {
       const errorMessage = error instanceof Error ? error.message : 'Error cargando ejemplos';
       setErrors([errorMessage]);
       toast.error(errorMessage);
+      // Limpiar rutas resaltadas en caso de error
       store.clearHighlightedRoutes();
+      store.clearExploredRoutes();
     } finally {
       setLoading(false);
     }
@@ -268,6 +318,7 @@ export function useRouteController(options?: UseRouteControllerOptions) {
     routes: store.routes,
     setRoutes: store.setRoutes,
     highlightedRoutes: store.getHighlightedRoutes(),
+    exploredRoutes: store.getExploredRoutes(),
 
     route: store.route,
     setRoute: store.setRoute,
@@ -278,6 +329,12 @@ export function useRouteController(options?: UseRouteControllerOptions) {
     toggleHighlightedRoute: store.toggleHighlightedRoute,
     clearHighlightedRoutes: store.clearHighlightedRoutes,
     isRouteHighlighted: store.isRouteHighlighted,
+
+    // Explored routes actions
+    addExploredRoute: store.addExploredRoute,
+    removeExploredRoute: store.removeExploredRoute,
+    clearExploredRoutes: store.clearExploredRoutes,
+    isRouteExplored: store.isRouteExplored,
 
     loadExample,
   };

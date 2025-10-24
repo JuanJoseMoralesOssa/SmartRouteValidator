@@ -114,32 +114,28 @@ export class RouteVisualizationController {
     baseRadius: number,
     baseAngle: number,
     existingPositions: Array<{ x: number; y: number }>
-  ): { x: number; y: number } | null {
+  ): { x: number; y: number } {
     const centerX = canvas.width / 2
     const centerY = canvas.height / 2
     const { MIN_CITY_DISTANCE, MAX_PLACEMENT_ATTEMPTS, ANGLE_INCREMENT, RADIUS_INCREMENT, MAX_RADIUS_MULTIPLIER } = this.POSITION_CONFIG
 
     let currentRadius = baseRadius
     const maxRadius = baseRadius * MAX_RADIUS_MULTIPLIER
+    const margin = 50
 
-    // Intentar con diferentes radios si es necesario
     while (currentRadius <= maxRadius) {
       let currentAngle = baseAngle
       let attempts = 0
 
-      // Intentar diferentes ángulos en el radio actual
       while (attempts < MAX_PLACEMENT_ATTEMPTS) {
         const x = centerX + currentRadius * Math.cos(currentAngle)
         const y = centerY + currentRadius * Math.sin(currentAngle)
 
-        // Verificar que esté dentro del canvas con margen
-        const margin = 50
-        if (x >= margin && x <= canvas.width - margin &&
-          y >= margin && y <= canvas.height - margin) {
+        const isInBounds = x >= margin && x <= canvas.width - margin && y >= margin && y <= canvas.height - margin
+        const isFarEnough = !this.isPositionTooClose(x, y, existingPositions, MIN_CITY_DISTANCE)
 
-          if (!this.isPositionTooClose(x, y, existingPositions, MIN_CITY_DISTANCE)) {
-            return { x, y }
-          }
+        if (isInBounds && isFarEnough) {
+          return { x, y }
         }
 
         currentAngle += ANGLE_INCREMENT
@@ -149,7 +145,7 @@ export class RouteVisualizationController {
       currentRadius += RADIUS_INCREMENT
     }
 
-    // Si no encontramos posición válida, retornar posición base (fallback)
+    // Fallback a posición base
     console.warn('No se pudo encontrar posición óptima, usando posición base')
     return {
       x: centerX + baseRadius * Math.cos(baseAngle),
@@ -296,6 +292,7 @@ export class RouteVisualizationController {
 
   /**
    * Dibuja una ruta individual con estilo direccional
+   * Ahora soporta tres estados: normal, highlighted (activa), y explored (visitada/descartada)
    */
   static drawRoute(
     ctx: CanvasRenderingContext2D,
@@ -303,7 +300,8 @@ export class RouteVisualizationController {
     startY: number,
     endX: number,
     endY: number,
-    isHighlighted: boolean = false
+    isHighlighted: boolean = false,
+    isExplored: boolean = false
   ) {
     // Validar que todas las coordenadas son números finitos
     if (!Number.isFinite(startX) || !Number.isFinite(startY) ||
@@ -318,38 +316,88 @@ export class RouteVisualizationController {
       return
     }
 
-    const opacity = isHighlighted ? 1 : 0.8
-    const lineWidth = isHighlighted ? 4 : 2.5
+    // Determinar estilo según el estado
+    let lineWidth: number
+    let colors: { start: string; middle?: string; end: string }
 
-    // Crear gradiente para la línea usando constantes
-    const gradient = ctx.createLinearGradient(startX, startY, endX, endY)
-    const colors = this.VISUALIZATION_CONFIG.DIRECT_ROUTE_COLORS
-
-    gradient.addColorStop(0, `rgba(${this.hexToRgb(colors.START)}, ${opacity})`)
-    gradient.addColorStop(1, `rgba(${this.hexToRgb(colors.END)}, ${opacity})`)
-
-    // Dibujar sombra sutil si está resaltada
     if (isHighlighted) {
+      // Ruta activa: dorado brillante
+      lineWidth = 8
+      colors = {
+        start: 'rgba(255, 215, 0, 1)',    // Dorado brillante
+        middle: 'rgba(255, 165, 0, 1)',   // Naranja brillante
+        end: 'rgba(255, 69, 0, 1)'        // Rojo-naranja brillante
+      }
+    } else if (isExplored) {
+      // Ruta explorada (backtracked): azul semitransparente
+      lineWidth = 3.5
+      colors = {
+        start: 'rgba(100, 149, 237, 0.5)',  // Azul cornflower semitransparente
+        end: 'rgba(65, 105, 225, 0.5)'      // Azul royal semitransparente
+      }
+    } else {
+      // Ruta normal: colores por defecto
+      lineWidth = 2.5
+      const defaultColors = this.VISUALIZATION_CONFIG.DIRECT_ROUTE_COLORS
+      colors = {
+        start: `rgba(${this.hexToRgb(defaultColors.START)}, 0.6)`,
+        end: `rgba(${this.hexToRgb(defaultColors.END)}, 0.6)`
+      }
+    }
+
+    // Crear gradiente para la línea
+    const gradient = ctx.createLinearGradient(startX, startY, endX, endY)
+    gradient.addColorStop(0, colors.start)
+    if (colors.middle) {
+      gradient.addColorStop(0.5, colors.middle)
+    }
+    gradient.addColorStop(1, colors.end)
+
+    // Dibujar sombra brillante si está resaltada
+    if (isHighlighted) {
+      // Sombra exterior brillante (efecto glow)
+      ctx.shadowColor = 'rgba(255, 215, 0, 0.8)'
+      ctx.shadowBlur = 15
+      ctx.shadowOffsetX = 0
+      ctx.shadowOffsetY = 0
+
       ctx.beginPath()
-      ctx.moveTo(startX + 1, startY + 1)
-      ctx.lineTo(endX + 1, endY + 1)
-      ctx.strokeStyle = 'rgba(0, 0, 0, 0.3)'
-      ctx.lineWidth = lineWidth + 1
+      ctx.moveTo(startX, startY)
+      ctx.lineTo(endX, endY)
+      ctx.strokeStyle = gradient
+      ctx.lineWidth = lineWidth
+      ctx.lineCap = 'round'
+      ctx.stroke()
+
+      // Resetear sombra
+      ctx.shadowColor = 'transparent'
+      ctx.shadowBlur = 0
+    } else {
+      // Dibujar línea normal sin efectos
+      ctx.beginPath()
+      ctx.moveTo(startX, startY)
+      ctx.lineTo(endX, endY)
+      ctx.strokeStyle = gradient
+      ctx.lineWidth = lineWidth
+      ctx.lineCap = 'round'
       ctx.stroke()
     }
 
-    // Dibujar línea principal
-    ctx.beginPath()
-    ctx.moveTo(startX, startY)
-    ctx.lineTo(endX, endY)
-    ctx.strokeStyle = gradient
-    ctx.lineWidth = lineWidth
-    ctx.lineCap = 'round'
-    ctx.stroke()
-
     // Dibujar flecha direccional
-    const arrowColor = colors.END
-    const arrowSize = isHighlighted ? 12 : 10
+    let arrowColor: string
+    let arrowSize: number
+
+    if (isHighlighted) {
+      arrowColor = '#FFD700'
+      arrowSize = 18
+    } else if (isExplored) {
+      arrowColor = 'rgba(100, 149, 237, 0.7)'
+      arrowSize = 12
+    } else {
+      arrowColor = this.VISUALIZATION_CONFIG.DIRECT_ROUTE_COLORS.END
+      arrowSize = 10
+    }
+
     this.drawArrowHead(ctx, startX, startY, endX, endY, arrowColor, arrowSize)
 
     // Puntos decorativos en los extremos
@@ -405,7 +453,7 @@ export class RouteVisualizationController {
       try {
         // Asegurar que el contexto está listo para dibujar la imagen
         ctx.globalCompositeOperation = 'source-over'
-        ctx.globalAlpha = 1.0
+        ctx.globalAlpha = 1
 
         ctx.drawImage(img, x - iconSize / 2, y - iconSize / 2, iconSize, iconSize)
       } catch (e) {
@@ -537,7 +585,8 @@ export class RouteVisualizationController {
     ctx: CanvasRenderingContext2D,
     validRoutes: Route[],
     positions: Map<string, { x: number; y: number }>,
-    highlightedRouteIds?: Set<string | number>
+    highlightedRouteIds?: Set<string | number>,
+    exploredRouteIds?: Set<string | number>
   ): void {
     const totalOffset = this.getTotalOffset()
 
@@ -575,6 +624,7 @@ export class RouteVisualizationController {
         }
 
         const isHighlighted = route.id && highlightedRouteIds ? highlightedRouteIds.has(route.id) : false
+        const isExplored = route.id && exploredRouteIds ? exploredRouteIds.has(route.id) : false
 
         this.drawRoute(
           ctx,
@@ -582,7 +632,8 @@ export class RouteVisualizationController {
           startY,
           endX,
           endY,
-          isHighlighted
+          isHighlighted,
+          isExplored
         )
       }
     })
@@ -659,7 +710,8 @@ export class RouteVisualizationController {
     canvas: HTMLCanvasElement,
     ctx: CanvasRenderingContext2D,
     validRoutes: Route[],
-    highlightedRouteIds?: Set<string | number>
+    highlightedRouteIds?: Set<string | number>,
+    exploredRouteIds?: Set<string | number>
   ): Promise<void> {
     // Validar parámetros de entrada
     if (!canvas || !ctx) {
@@ -707,7 +759,7 @@ export class RouteVisualizationController {
     const cityImages = await this.loadCityImages(cities)
 
     // Dibujar rutas
-    this.drawAllRoutes(ctx, validRoutes, positions, highlightedRouteIds)
+    this.drawAllRoutes(ctx, validRoutes, positions, highlightedRouteIds, exploredRouteIds)
 
     // Dibujar ciudades
     this.drawAllCities(ctx, cities, positions, cityColors, cityImages, validRoutes, highlightedRouteIds)

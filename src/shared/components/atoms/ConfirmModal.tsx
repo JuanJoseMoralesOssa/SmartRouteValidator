@@ -79,18 +79,10 @@ export function ConfirmModal() {
   const v = variants[variant ?? "danger"];
 
   return (
-    <button
-      type="button"
+    <div
       onClick={handleBackdropClick}
-      onKeyDown={(e: React.KeyboardEvent<HTMLButtonElement>) => {
-        if (e.key === "Enter" || e.key === " ") {
-          handleCancel();
-        }
-      }}
       className={`fixed inset-0 z-50 flex items-center justify-center p-4 transition-colors duration-300 ${isVisible ? "bg-black/60 backdrop-blur-sm" : "bg-black/0"
         }`}
-      style={{ padding: 0, border: "none", background: "none" }}
-      aria-label="Backdrop"
     >
       <img alt="Backdrop" style={{ display: "none" }} />
       <dialog
@@ -173,6 +165,6 @@ export function ConfirmModal() {
           </div>
         </div>
       </dialog>
-    </button>
+    </div>
   );
 }

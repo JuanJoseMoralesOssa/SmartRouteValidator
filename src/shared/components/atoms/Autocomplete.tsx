@@ -211,9 +211,9 @@ export default function Autocomplete({
         >
           {filteredOptions.map((option, i) => (
             <button
-              key={option.id || i}
+              key={`${option.id}-${i}`}
               type="button"
-              id={`option-${option.id}`}
+              id={`option-${option.id}-${i}`}
               role="menuitem"
               tabIndex={-1}
               className={`
@@ -286,7 +286,7 @@ export default function Autocomplete({
           aria-controls={`autocomplete-list-${label.replace(/\s+/g, '-').toLowerCase()}`}
           aria-activedescendant={
             highlightIndex >= 0
-              ? `option-${filteredOptions[highlightIndex]?.id}`
+              ? `option-${filteredOptions[highlightIndex]?.id}-${highlightIndex}`
               : undefined
           }
           onChange={handleInputChange}

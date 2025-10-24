@@ -12,33 +12,47 @@ export interface ValidationResult {
   errorMessage?: string;
 }
 
+/**
+ * Callback para visualización en tiempo real
+ */
+export type VisualizationCallback = (routeId: ID, action: 'add' | 'clear' | 'remove' | 'explore') => Promise<void>;
+
 export class RouteRestrictionService {
-
-  evaluatedRoute: Route;
-  costIndirectRoute: number;
-  visitedRoutes: Map<ID, ID>;
-  routeRepository: typeof routeRepository;
-  exploredRoutes: ID[]; // Registrar rutas exploradas
-
-  constructor() {
-    this.evaluatedRoute = {} as Route;
-    this.costIndirectRoute = 0;
-    this.visitedRoutes = new Map<ID, ID>();
-    this.routeRepository = routeRepository;
-    this.exploredRoutes = [];
-  }
+  private evaluatedRoute: Route = {} as Route;
+  private costIndirectRoute: number = 0;
+  private readonly visitedRoutes: Map<ID, ID> = new Map();
+  private readonly routeRepository = routeRepository;
+  private exploredRoutes: ID[] = [];
+  private visualizationCallback?: VisualizationCallback;
 
   /**
    * Valida una ruta y retorna el resultado con las rutas exploradas
    */
-  async validateRoute(route: Route | Partial<Route>): Promise<ValidationResult> {
+  async validateRoute(
+    route: Route | Partial<Route>,
+    visualizationCallback?: VisualizationCallback
+  ): Promise<ValidationResult> {
+    // Reiniciar el estado para cada validación
     this.evaluatedRoute = route as Route;
+    this.costIndirectRoute = 0;
     this.visitedRoutes.clear();
-    this.exploredRoutes = []; // Limpiar rutas exploradas
+    this.exploredRoutes = [];
+    this.visualizationCallback = visualizationCallback;
+
+    console.log(`🔍 Validando ruta: ${route.origin?.name} → ${route.destiny?.name} (Costo: ${route.cost})`);
+
+    // Limpiar visualización al inicio de TODA validación
+    if (this.visualizationCallback) {
+      console.log(`🧹 Pre-limpieza al inicio de validateRoute`);
+      await this.visualizationCallback('' as ID, 'clear');
+    }
 
     const hasViolation = await this.isGreaterOrEqualDirectRouteCost(route as Route);
 
     this.clearVisitedRoutes();
+
+    console.log(`${hasViolation ? '❌' : '✅'} Validación ${hasViolation ? 'FALLIDA' : 'EXITOSA'}`);
+    console.log(`📊 Rutas exploradas: ${this.exploredRoutes.length}`, this.exploredRoutes);
 
     return {
       isValid: !hasViolation,
@@ -50,96 +64,115 @@ export class RouteRestrictionService {
     };
   }
 
-  async isGreaterOrEqualDirectRouteCost(route: Route): Promise<boolean> {
+  private async isGreaterOrEqualDirectRouteCost(route: Route): Promise<boolean> {
+    console.log(`🎯 Iniciando isGreaterOrEqualDirectRouteCost`);
+
     const connections = this.getConnections().filter((r) => route.originId === r.originId);
+
     for (const connection of connections) {
-      if (
-        this.areValidIds(route, connection) &&
-        this.isIndirectRoute(connection.destinyId!, route.destinyId!)
-      ) {
+      if (this.areValidIds(route, connection) && this.isIndirectRoute(connection.destinyId!, route.destinyId!)) {
+        // Reiniciar el costo para esta nueva ruta indirecta
         this.costIndirectRoute = connection.cost;
 
-        // Registrar la ruta que estamos explorando (para visualización)
+        // Agregar la ruta al recorrido y notificar la visualización
         if (connection.id) {
           this.exploredRoutes.push(connection.id);
+          if (this.visualizationCallback) {
+            console.log(`  ➕ Resaltando ruta inicial: ${connection.id}`);
+            await this.visualizationCallback(connection.id, 'add');
+          }
         }
 
         if (await this.verifyRoute(connection.destinyId!)) {
-          const firstRoute = connection;
-          this.visitedRoutes.set(firstRoute.id!, firstRoute.id!);
+          this.visitedRoutes.set(connection.id!, connection.id!);
           return true;
         }
 
+        // Backtrack: esta ruta no funcionó, quitar el resaltado
+        if (connection.id && this.visualizationCallback) {
+          console.log(`  ➖ Quitando resaltado (backtrack): ${connection.id}`);
+          await this.visualizationCallback(connection.id, 'remove');
+          // Marcar como explorada (visitada pero descartada)
+          console.log(`  🔍 Marcando como explorada: ${connection.id}`);
+          await this.visualizationCallback(connection.id, 'explore');
+        }
+
+        // Limpiar rutas visitadas para el siguiente intento, pero mantener exploredRoutes
         this.clearVisitedRoutes();
       }
     }
     return false;
   }
 
-  isIndirectRoute(routeID: ID, destinyId: ID): boolean {
+  private isIndirectRoute(routeID: ID, destinyId: ID): boolean {
     return routeID !== destinyId;
   }
 
-  areValidRouteIds(route: Route): boolean {
-    return (route.originId !== undefined && route.destinyId !== undefined) ||
-      (route.originId !== null && route.destinyId !== null) ||
-      (route.originId !== "" && route.destinyId !== "") ||
-      (route.originId !== 0 && route.destinyId !== 0) ||
-      (Number.isInteger(route.originId) && Number.isInteger(route.destinyId)) ||
-      (route.originId !== undefined && route.destinyId !== undefined && route.originId !== route.destinyId) ||
-      (route.originId !== undefined && route.destinyId !== undefined && Number(route.originId) > 0 && Number(route.destinyId) > 0)
-      ;
+  private areValidRouteIds(route: Route): boolean {
+    return !!(route.originId && route.destinyId && route.originId !== route.destinyId);
   }
 
-  areValidIds(route: Route, routeToFilter: Route): boolean {
+  private areValidIds(route: Route, routeToFilter: Route): boolean {
     return this.areValidRouteIds(route) && this.areValidRouteIds(routeToFilter);
   }
 
-
-  getConnections(): Route[] {
-    return this.routeRepository.getAllData()
+  private getConnections(): Route[] {
+    return this.routeRepository.getAllData();
   }
 
-  isNotVisited(route: Route): boolean {
+  private isNotVisited(route: Route): boolean {
     return !this.visitedRoutes.has(route.id!);
   }
 
-  async verifyRoute(originId: ID): Promise<boolean> {
+  private async verifyRoute(originId: ID): Promise<boolean> {
     const connections = this.getConnections().filter(route => route.originId === originId && this.isNotVisited(route));
-    for (const connection of connections) {
 
-      // Registrar la ruta que estamos explorando (para visualización)
+    for (const connection of connections) {
+      // Agregar la ruta al recorrido (para visualización) y notificar
       if (connection.id) {
         this.exploredRoutes.push(connection.id);
-      }
-
-      this.costIndirectRoute += connection.cost;
-      this.visitedRoutes.set(connection.id!, connection.id!);
-      const roadWithAllIndirectRoutesToDestiny = connection.destinyId === this.evaluatedRoute.destinyId
-      const isCostInvalid = this.costIndirectRoute <= this.evaluatedRoute.cost
-
-      if (roadWithAllIndirectRoutesToDestiny) {
-        if (isCostInvalid) {
-          return true
-        } else {
-          return false
+        if (this.visualizationCallback) {
+          console.log(`  ➕ Resaltando ruta: ${connection.id}`);
+          await this.visualizationCallback(connection.id, 'add');
         }
       }
 
+      // Actualizar costo acumulado
+      this.costIndirectRoute += connection.cost;
+      this.visitedRoutes.set(connection.id!, connection.id!);
+
+      const isDestiny = connection.destinyId === this.evaluatedRoute.destinyId;
+      const isCostInvalid = this.costIndirectRoute <= this.evaluatedRoute.cost;
+
+      // Si llegamos al destino, verificar si el costo viola la restricción
+      if (isDestiny) {
+        return isCostInvalid;
+      }
+
+      // Continuar explorando recursivamente
       if (await this.verifyRoute(connection.destinyId!)) {
         return true;
       }
 
-      // Backtrack
+      // Backtrack: esta ruta no funcionó, quitar el resaltado
+      if (connection.id && this.visualizationCallback) {
+        console.log(`  ➖ Quitando resaltado (backtrack): ${connection.id}`);
+        await this.visualizationCallback(connection.id, 'remove');
+        // Marcar como explorada (visitada pero descartada)
+        console.log(`  🔍 Marcando como explorada: ${connection.id}`);
+        await this.visualizationCallback(connection.id, 'explore');
+      }
+
+      // Backtrack: revertir el costo pero mantener la ruta en exploredRoutes (para visualización)
       this.costIndirectRoute -= connection.cost;
+      // NO remover de visitedRoutes aquí para evitar ciclos infinitos
     }
     return false;
   }
 
-  clearVisitedRoutes(): void {
+  private clearVisitedRoutes(): void {
     this.visitedRoutes.clear();
   }
-
 }
 
 export const routeRestrictionService = new RouteRestrictionService()

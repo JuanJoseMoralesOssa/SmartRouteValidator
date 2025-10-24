@@ -10,7 +10,8 @@ interface RouteVisualizationProps {
 const RouteVisualization = ({ highlightedRouteId }: RouteVisualizationProps) => {
     const {
         routes,
-        highlightedRouteIds
+        highlightedRouteIds,
+        exploredRouteIds
     } = useRouteStore()
 
     const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -50,6 +51,9 @@ const RouteVisualization = ({ highlightedRouteId }: RouteVisualizationProps) => 
             combinedHighlightedIds.add(highlightedRouteId)
         }
 
+        // Crear Set de IDs exploradas
+        const exploredIds = new Set(exploredRouteIds)
+
         // Inicializar visualización usando el controlador (async)
         const renderVisualization = async () => {
             try {
@@ -57,7 +61,8 @@ const RouteVisualization = ({ highlightedRouteId }: RouteVisualizationProps) => 
                     canvas,
                     ctx,
                     validRoutes,
-                    combinedHighlightedIds.size > 0 ? combinedHighlightedIds : undefined
+                    combinedHighlightedIds.size > 0 ? combinedHighlightedIds : undefined,
+                    exploredIds.size > 0 ? exploredIds : undefined
                 )
             } catch (error) {
                 // Ignorar errores de AbortController
@@ -76,7 +81,7 @@ const RouteVisualization = ({ highlightedRouteId }: RouteVisualizationProps) => 
         return () => {
             abortController.abort()
         }
-    }, [routes, highlightedRouteIds, highlightedRouteId])
+    }, [routes, highlightedRouteIds, exploredRouteIds, highlightedRouteId])
 
     return (
         <div className='w-full bg-gradient-to-br from-gray-900 via-blue-900 to-indigo-900 rounded-lg'>
