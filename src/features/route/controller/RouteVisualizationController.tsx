@@ -293,6 +293,7 @@ export class RouteVisualizationController {
   /**
    * Dibuja una ruta individual con estilo direccional
    * Ahora soporta tres estados: normal, highlighted (activa), y explored (visitada/descartada)
+   * Soporta curvas Bézier cuadráticas para evitar superposición de aristas bidireccionales
    */
   static drawRoute(
     ctx: CanvasRenderingContext2D,
@@ -301,13 +302,20 @@ export class RouteVisualizationController {
     endX: number,
     endY: number,
     isHighlighted: boolean = false,
-    isExplored: boolean = false
+    isExplored: boolean = false,
+    controlPoint?: { cpX: number; cpY: number }
   ) {
     // Validar que todas las coordenadas son números finitos
     if (!Number.isFinite(startX) || !Number.isFinite(startY) ||
       !Number.isFinite(endX) || !Number.isFinite(endY)) {
       console.warn('Invalid coordinates for route drawing:', { startX, startY, endX, endY })
       return
+    }
+
+    // Validar punto de control si existe
+    if (controlPoint && (!Number.isFinite(controlPoint.cpX) || !Number.isFinite(controlPoint.cpY))) {
+      console.warn('Invalid control point, drawing straight line instead')
+      controlPoint = undefined
     }
 
     // Validar que las coordenadas no son iguales (evitar líneas de longitud cero)
@@ -353,52 +361,114 @@ export class RouteVisualizationController {
     }
     gradient.addColorStop(1, colors.end)
 
+    // Calcular punto final para la flecha ANTES de dibujar la línea
+    let arrowEndX = endX
+    let arrowEndY = endY
+    let arrowStartX = startX
+    let arrowStartY = startY
+
+    // Determinar tamaño de flecha según estado
+    let arrowSize: number
+    if (isHighlighted) {
+      arrowSize = 18
+    } else if (isExplored) {
+      arrowSize = 12
+    } else {
+      arrowSize = 10
+    }
+
+    // Calcular punto donde termina la línea (antes de la flecha)
+    let lineEndX = endX
+    let lineEndY = endY
+
+    if (controlPoint) {
+      // Para curvas, calcular el punto donde terminará la línea (antes de la flecha)
+      const tEnd = 0.97 // Punto donde termina la línea
+      arrowEndX = endX
+      arrowEndY = endY
+
+      // Para calcular la dirección correcta de la flecha, usar la tangente en tEnd
+      // La derivada de una curva Bézier cuadrática es: B'(t) = 2(1-t)(P1-P0) + 2t(P2-P1)
+      // donde P0=start, P1=controlPoint, P2=end
+      const tangentX = 2 * (1 - tEnd) * (controlPoint.cpX - startX) + 2 * tEnd * (endX - controlPoint.cpX)
+      const tangentY = 2 * (1 - tEnd) * (controlPoint.cpY - startY) + 2 * tEnd * (endY - controlPoint.cpY)
+
+      // Normalizar la tangente
+      const tangentLength = Math.sqrt(tangentX * tangentX + tangentY * tangentY)
+      const unitTangentX = tangentLength > 0 ? tangentX / tangentLength : 0
+      const unitTangentY = tangentLength > 0 ? tangentY / tangentLength : 0
+
+      // Calcular el punto de inicio de la flecha retrocediendo desde lineEnd en la dirección de la tangente
+      const arrowBackOffset = 15 // Distancia para calcular la dirección de la flecha
+      arrowStartX = lineEndX - unitTangentX * arrowBackOffset
+      arrowStartY = lineEndY - unitTangentY * arrowBackOffset
+    } else {
+      // Para líneas rectas, retroceder desde el punto final
+      const dx = endX - startX
+      const dy = endY - startY
+      const length = Math.sqrt(dx * dx + dy * dy)
+
+      if (length > 0) {
+        const unitX = dx / length
+        const unitY = dy / length
+
+        // La línea termina antes de la flecha
+        const lineOffset = arrowSize  // Espacio para la flecha
+        lineEndX = endX - unitX * lineOffset
+        lineEndY = endY - unitY * lineOffset
+
+        // La flecha va desde donde termina la línea hasta el borde del círculo
+        arrowStartX = lineEndX
+        arrowStartY = lineEndY
+        arrowEndX = endX
+        arrowEndY = endY
+      }
+    }
+
+    // Dibujar la curva o línea (termina ANTES de la flecha)
+    ctx.beginPath()
+    ctx.moveTo(startX, startY)
+
+    if (controlPoint) {
+      // Dibujar curva Bézier cuadrática hasta lineEndX/lineEndY
+      ctx.quadraticCurveTo(controlPoint.cpX, controlPoint.cpY, lineEndX, lineEndY)
+    } else {
+      // Dibujar línea recta hasta lineEndX/lineEndY
+      ctx.lineTo(lineEndX, lineEndY)
+    }
+
+    ctx.strokeStyle = gradient
+    ctx.lineWidth = lineWidth
+    ctx.lineCap = 'round'
+
     // Dibujar sombra brillante si está resaltada
     if (isHighlighted) {
-      // Sombra exterior brillante (efecto glow)
       ctx.shadowColor = 'rgba(255, 215, 0, 0.8)'
       ctx.shadowBlur = 15
       ctx.shadowOffsetX = 0
       ctx.shadowOffsetY = 0
+    }
 
-      ctx.beginPath()
-      ctx.moveTo(startX, startY)
-      ctx.lineTo(endX, endY)
-      ctx.strokeStyle = gradient
-      ctx.lineWidth = lineWidth
-      ctx.lineCap = 'round'
-      ctx.stroke()
+    ctx.stroke()
 
-      // Resetear sombra
+    // Resetear sombra
+    if (isHighlighted) {
       ctx.shadowColor = 'transparent'
       ctx.shadowBlur = 0
-    } else {
-      // Dibujar línea normal sin efectos
-      ctx.beginPath()
-      ctx.moveTo(startX, startY)
-      ctx.lineTo(endX, endY)
-      ctx.strokeStyle = gradient
-      ctx.lineWidth = lineWidth
-      ctx.lineCap = 'round'
-      ctx.stroke()
     }
 
     // Dibujar flecha direccional
     let arrowColor: string
-    let arrowSize: number
 
     if (isHighlighted) {
       arrowColor = '#FFD700'
-      arrowSize = 18
     } else if (isExplored) {
       arrowColor = 'rgba(100, 149, 237, 0.7)'
-      arrowSize = 12
     } else {
       arrowColor = this.VISUALIZATION_CONFIG.DIRECT_ROUTE_COLORS.END
-      arrowSize = 10
     }
 
-    this.drawArrowHead(ctx, startX, startY, endX, endY, arrowColor, arrowSize)
+    this.drawArrowHead(ctx, arrowStartX, arrowStartY, arrowEndX, arrowEndY, arrowColor, arrowSize)
 
     // Puntos decorativos en los extremos
     this.drawEndPoint(ctx, startX, startY, arrowColor)
@@ -579,7 +649,120 @@ export class RouteVisualizationController {
   }
 
   /**
-   * Dibuja todas las rutas en el canvas
+   * Analiza las rutas para detectar duplicados bidireccionales (A->B y B->A)
+   */
+  static analyzeRouteConnections(validRoutes: Route[]): Map<string, number> {
+    const connectionCount = new Map<string, number>()
+
+    validRoutes.forEach((route) => {
+      if (!route.origin?.name || !route.destiny?.name) return
+
+      // Crear clave ordenada alfabéticamente para identificar conexiones bidireccionales
+      const cities = [route.origin.name, route.destiny.name].sort((a, b) => a.localeCompare(b))
+      const connectionKey = `${cities[0]}<->${cities[1]}`
+
+      connectionCount.set(connectionKey, (connectionCount.get(connectionKey) || 0) + 1)
+    })
+
+    return connectionCount
+  }
+
+  /**
+   * Calcula el índice de curvatura para una ruta específica entre dos ciudades
+   */
+  static getRouteCurveIndex(
+    originName: string,
+    destinyName: string,
+    validRoutes: Route[],
+    currentRouteId?: string | number
+  ): { curveIndex: number; totalRoutes: number } {
+    // Filtrar rutas entre estas dos ciudades (en ambas direcciones)
+    const routesBetweenCities = validRoutes.filter(r =>
+      (r.origin?.name === originName && r.destiny?.name === destinyName) ||
+      (r.origin?.name === destinyName && r.destiny?.name === originName)
+    )
+
+    // Encontrar el índice de la ruta actual
+    const currentIndex = routesBetweenCities.findIndex(r => r.id === currentRouteId)
+
+    return {
+      curveIndex: Math.max(0, currentIndex),
+      totalRoutes: routesBetweenCities.length
+    }
+  }
+
+  /**
+   * Calcula un punto de entrada/salida ajustado en el círculo de la ciudad
+   * para evitar superposición cuando hay múltiples aristas
+   */
+  static calculateCircleEntryPoint(
+    centerX: number,
+    centerY: number,
+    targetX: number,
+    targetY: number,
+    curveIndex: number,
+    totalRoutes: number
+  ): { x: number; y: number } {
+    const radius = this.VISUALIZATION_CONFIG.CIRCLE_RADIUS + this.VISUALIZATION_CONFIG.LINE_MARGIN
+
+    // Calcular ángulo base hacia el objetivo
+    const baseAngle = Math.atan2(targetY - centerY, targetX - centerX)
+
+    // Si hay múltiples rutas, distribuir los puntos de entrada alrededor del círculo
+    let angleOffset = 0
+    if (totalRoutes > 1) {
+      // Rango de dispersión (en radianes): ±20 grados por defecto
+      const maxSpread = Math.PI / 9 // ~20 grados
+      const spreadPerRoute = (maxSpread * 2) / Math.max(totalRoutes - 1, 1)
+      angleOffset = -maxSpread + (curveIndex * spreadPerRoute)
+    }
+
+    const finalAngle = baseAngle + angleOffset
+
+    return {
+      x: centerX + Math.cos(finalAngle) * radius,
+      y: centerY + Math.sin(finalAngle) * radius
+    }
+  }  /**
+   * Calcula el punto de control para una curva Bézier cuadrática
+   */
+  static calculateBezierControlPoint(
+    startX: number,
+    startY: number,
+    endX: number,
+    endY: number,
+    curveIntensity: number,
+    isUpward: boolean
+  ): { cpX: number; cpY: number } {
+    // Punto medio de la línea
+    const midX = (startX + endX) / 2
+    const midY = (startY + endY) / 2
+
+    // Vector perpendicular a la línea
+    const dx = endX - startX
+    const dy = endY - startY
+
+    // Vector perpendicular (rotado 90 grados)
+    const perpX = -dy
+    const perpY = dx
+
+    // Normalizar el vector perpendicular
+    const length = Math.sqrt(perpX * perpX + perpY * perpY)
+    const unitPerpX = length > 0 ? perpX / length : 0
+    const unitPerpY = length > 0 ? perpY / length : 0
+
+    // Determinar dirección de la curva basado en la relación entre ciudades
+    const direction = isUpward ? 1 : -1
+
+    // Calcular punto de control
+    const cpX = midX + unitPerpX * curveIntensity * direction
+    const cpY = midY + unitPerpY * curveIntensity * direction
+
+    return { cpX, cpY }
+  }
+
+  /**
+   * Dibuja todas las rutas en el canvas con curvas Bézier para evitar superposición
    */
   static drawAllRoutes(
     ctx: CanvasRenderingContext2D,
@@ -588,7 +771,8 @@ export class RouteVisualizationController {
     highlightedRouteIds?: Set<string | number>,
     exploredRouteIds?: Set<string | number>
   ): void {
-    const totalOffset = this.getTotalOffset()
+    // Analizar conexiones para detectar rutas bidireccionales
+    const connectionCount = this.analyzeRouteConnections(validRoutes)
 
     validRoutes.forEach((route) => {
       const origin = positions.get(route.origin?.name || '')
@@ -605,18 +789,41 @@ export class RouteVisualizationController {
           return
         }
 
-        const { startX, startY, endX, endY } = this.calculateLinePoints(
+        // Obtener índice de curvatura
+        const { curveIndex, totalRoutes } = this.getRouteCurveIndex(
+          route.origin.name,
+          route.destiny.name,
+          validRoutes,
+          route.id
+        )
+
+        // Calcular puntos de entrada/salida ajustados en los círculos
+        const adjustedStart = this.calculateCircleEntryPoint(
           origin.x,
           origin.y,
           destination.x,
           destination.y,
-          totalOffset
+          curveIndex,
+          totalRoutes
         )
 
-        // Validar que los puntos calculados son válidos
+        const adjustedEnd = this.calculateCircleEntryPoint(
+          destination.x,
+          destination.y,
+          origin.x,
+          origin.y,
+          curveIndex,
+          totalRoutes
+        )        // Usar puntos ajustados
+        const startX = adjustedStart.x
+        const startY = adjustedStart.y
+        const endX = adjustedEnd.x
+        const endY = adjustedEnd.y
+
+        // Validar puntos calculados
         if (!Number.isFinite(startX) || !Number.isFinite(startY) ||
           !Number.isFinite(endX) || !Number.isFinite(endY)) {
-          console.warn('Invalid calculated line points:', {
+          console.warn('Invalid calculated entry points:', {
             startX, startY, endX, endY,
             routeId: route.id
           })
@@ -626,6 +833,35 @@ export class RouteVisualizationController {
         const isHighlighted = route.id && highlightedRouteIds ? highlightedRouteIds.has(route.id) : false
         const isExplored = route.id && exploredRouteIds ? exploredRouteIds.has(route.id) : false
 
+        // Determinar si hay rutas bidireccionales
+        const cities = [route.origin.name, route.destiny.name].sort((a, b) => a.localeCompare(b))
+        const connectionKey = `${cities[0]}<->${cities[1]}`
+        const routeCount = connectionCount.get(connectionKey) || 1
+
+        // Calcular intensidad de curvatura
+        let curveIntensity = 0
+        let controlPoint: { cpX: number; cpY: number } | undefined = undefined
+
+        if (routeCount > 1) {
+          // Incrementar la curvatura según el índice
+          const baseCurve = 40 // Curvatura base
+          const curveIncrement = 25 // Incremento por cada ruta adicional
+          curveIntensity = baseCurve + (curveIndex * curveIncrement)
+
+          // Determinar si la curva va hacia arriba o abajo
+          // Si origin.name < destiny.name (alfabéticamente), curva hacia arriba
+          const isUpward = route.origin.name < route.destiny.name
+
+          controlPoint = this.calculateBezierControlPoint(
+            startX,
+            startY,
+            endX,
+            endY,
+            curveIntensity,
+            isUpward
+          )
+        }
+
         this.drawRoute(
           ctx,
           startX,
@@ -633,7 +869,8 @@ export class RouteVisualizationController {
           endX,
           endY,
           isHighlighted,
-          isExplored
+          isExplored,
+          controlPoint
         )
       }
     })
