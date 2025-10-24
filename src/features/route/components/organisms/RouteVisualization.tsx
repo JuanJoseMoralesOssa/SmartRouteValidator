@@ -14,8 +14,18 @@ const RouteVisualization = ({ highlightedRouteId }: RouteVisualizationProps) => 
     } = useRouteStore()
 
     const canvasRef = useRef<HTMLCanvasElement>(null)
+    const abortControllerRef = useRef<AbortController | null>(null)
 
     useEffect(() => {
+        // Cancelar cualquier renderizado previo en progreso
+        if (abortControllerRef.current) {
+            abortControllerRef.current.abort()
+        }
+
+        // Crear nuevo AbortController para esta ejecución
+        const abortController = new AbortController()
+        abortControllerRef.current = abortController
+
         if (!canvasRef.current || !routes) {
             return
         }
@@ -40,13 +50,32 @@ const RouteVisualization = ({ highlightedRouteId }: RouteVisualizationProps) => 
             combinedHighlightedIds.add(highlightedRouteId)
         }
 
-        // Inicializar visualización usando el controlador
-        RouteVisualizationController.initializeVisualization(
-            canvas,
-            ctx,
-            validRoutes,
-            combinedHighlightedIds.size > 0 ? combinedHighlightedIds : undefined
-        )
+        // Inicializar visualización usando el controlador (async)
+        const renderVisualization = async () => {
+            try {
+                await RouteVisualizationController.initializeVisualization(
+                    canvas,
+                    ctx,
+                    validRoutes,
+                    combinedHighlightedIds.size > 0 ? combinedHighlightedIds : undefined
+                )
+            } catch (error) {
+                // Ignorar errores de AbortController
+                if (error instanceof Error && error.name !== 'AbortError') {
+                    console.error('Error initializing visualization:', error)
+                }
+            }
+        }
+
+        // Solo renderizar si no fue abortado
+        if (!abortController.signal.aborted) {
+            renderVisualization()
+        }
+
+        // Cleanup: abortar cuando el componente se desmonte o las dependencias cambien
+        return () => {
+            abortController.abort()
+        }
     }, [routes, highlightedRouteIds, highlightedRouteId])
 
     return (
@@ -54,7 +83,7 @@ const RouteVisualization = ({ highlightedRouteId }: RouteVisualizationProps) => 
             <canvas
                 ref={canvasRef}
                 width={800}
-                height={500}
+                height={450}
                 className='w-full h-full border rounded-lg shadow-lg'
             />
         </div>

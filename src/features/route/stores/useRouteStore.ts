@@ -8,16 +8,11 @@ const useBaseRouteStore = createGenericStore<Route>()
 
 // Interface para funcionalidades específicas de rutas
 interface RouteSpecificState {
-  // IDs de rutas resaltadas para formar el camino
   highlightedRouteIds: Set<ID>
-
-  // Acciones para manejar rutas resaltadas (camino)
   addHighlightedRoute: (routeId: ID) => void
   removeHighlightedRoute: (routeId: ID) => void
   clearHighlightedRoutes: () => void
   toggleHighlightedRoute: (routeId: ID) => void
-
-  // Getters específicos
   getHighlightedRoutes: () => Route[]
   isRouteHighlighted: (routeId: ID) => boolean
 }
@@ -26,7 +21,6 @@ interface RouteSpecificState {
 const useRouteSpecificStore = create<RouteSpecificState>((set, get) => ({
   highlightedRouteIds: new Set(),
 
-  // Acciones para rutas resaltadas
   addHighlightedRoute: (routeId) => set((state) => ({
     highlightedRouteIds: new Set([...state.highlightedRouteIds, routeId])
   })),
@@ -49,7 +43,6 @@ const useRouteSpecificStore = create<RouteSpecificState>((set, get) => ({
     return { highlightedRouteIds: newSet }
   }),
 
-  // Getters
   getHighlightedRoutes: () => {
     const baseStore = useBaseRouteStore.getState()
     const { highlightedRouteIds } = get()
@@ -62,31 +55,48 @@ const useRouteSpecificStore = create<RouteSpecificState>((set, get) => ({
   }
 }))
 
-// Hook combinado que expone tanto funcionalidades genéricas como específicas
+/**
+ * Hook simplificado para el store de rutas
+ * Combina funcionalidades genéricas (CRUD) con específicas (highlighting)
+ */
 const useRouteStore = () => {
   const baseStore = useBaseRouteStore()
-  const specificStore = useRouteSpecificStore()
+
+  // Suscribirse explícitamente al estado para reactividad
+  const highlightedRouteIds = useRouteSpecificStore(state => state.highlightedRouteIds)
+  const addHighlightedRoute = useRouteSpecificStore(state => state.addHighlightedRoute)
+  const removeHighlightedRoute = useRouteSpecificStore(state => state.removeHighlightedRoute)
+  const clearHighlightedRoutes = useRouteSpecificStore(state => state.clearHighlightedRoutes)
+  const toggleHighlightedRoute = useRouteSpecificStore(state => state.toggleHighlightedRoute)
+  const getHighlightedRoutes = useRouteSpecificStore(state => state.getHighlightedRoutes)
+  const isRouteHighlighted = useRouteSpecificStore(state => state.isRouteHighlighted)
 
   // Override removeItem para también limpiar highlights
-  const removeItem = (id: ID) => {
+  const removeRoute = (id: ID) => {
     baseStore.removeItem(id)
-    specificStore.removeHighlightedRoute(id)
+    removeHighlightedRoute(id)
   }
 
   return {
-    // Propiedades y métodos genéricos (renombrados para compatibilidad)
+    // Propiedades y métodos genéricos (CRUD)
     routes: baseStore.items,
     setRoutes: baseStore.setItems,
     addRoute: baseStore.addItem,
     updateRoute: baseStore.updateItem,
-    removeRoute: removeItem,
+    removeRoute,
 
     route: baseStore.item,
     setRoute: baseStore.setItem,
     clearRoute: baseStore.clearItem,
 
-    // Propiedades y métodos específicos de rutas
-    ...specificStore
+    // Propiedades y métodos específicos (Highlighting)
+    highlightedRouteIds,
+    addHighlightedRoute,
+    removeHighlightedRoute,
+    clearHighlightedRoutes,
+    toggleHighlightedRoute,
+    getHighlightedRoutes,
+    isRouteHighlighted,
   }
 }
 

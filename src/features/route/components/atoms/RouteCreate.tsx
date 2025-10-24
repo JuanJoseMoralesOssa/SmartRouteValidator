@@ -5,7 +5,10 @@ import ActionButton from '@/shared/components/atoms/ActionButton'
 
 const RouteCreate = () => {
     const { isOpen, openModal, closeModal } = useModal()
-    const { handleCreate } = useRouteController()
+    const { handleCreate } = useRouteController({
+        enableVisualization: true,
+        visualizationDelay: 2000 // 2000ms entre cada paso para mejor visualización
+    })
     return (
         <div>
             <ActionButton

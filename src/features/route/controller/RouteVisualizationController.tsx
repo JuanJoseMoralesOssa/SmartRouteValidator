@@ -8,12 +8,41 @@ import { DEFAULT_COLORS } from '@/shared/constants/cts'
  * Controlador para funciones de visualización de rutas
  */
 export class RouteVisualizationController {
+  // Cache persistente de posiciones para evitar reposicionamiento
+  private static readonly cityPositionCache = new Map<string, { x: number; y: number }>()
+
+  // Configuración de espaciado y distribución
+  private static readonly POSITION_CONFIG = {
+    MIN_CITY_DISTANCE: 80, // Distancia mínima entre ciudades
+    MAX_PLACEMENT_ATTEMPTS: 50, // Máximo intentos para encontrar posición válida
+    ANGLE_INCREMENT: Math.PI / 20, // Incremento de ángulo por intento (9 grados)
+    RADIUS_INCREMENT: 20, // Incremento de radio si no hay espacio
+    MAX_RADIUS_MULTIPLIER: 1.8 // Máximo multiplicador del radio base
+  }
+
+  /**
+   * Resetea el cache de posiciones (útil para testing o reinicio manual)
+   */
+  static resetPositionCache(): void {
+    this.cityPositionCache.clear()
+  }
+
   /**
    * Crea un SVG coloreado para una ciudad
    */
   static createColoredSVG(city: City) {
     const svgType = CITY_SVG_TYPES.find(svg => svg.value === city.svgType)
-    if (!svgType) return null
+
+    if (!svgType) {
+      console.warn(`SVG type not found for city: ${city.name}, svgType: ${city.svgType}`)
+      // Usar el primer tipo por defecto si no se encuentra
+      const defaultSvgType = CITY_SVG_TYPES[0]
+      if (defaultSvgType) {
+        const DefaultComponent = defaultSvgType.component
+        return <DefaultComponent color={city.color || '#FF6B6B'} width={64} height={64} />
+      }
+      return null
+    }
 
     const SvgComponent = svgType.component
     return (
@@ -61,6 +90,149 @@ export class RouteVisualizationController {
         resolve(img)
       }
     })
+  }
+
+  /**
+   * Verificar si una posición está muy cerca de otras ciudades existentes
+   */
+  static isPositionTooClose(
+    x: number,
+    y: number,
+    existingPositions: Array<{ x: number; y: number }>,
+    minDistance: number
+  ): boolean {
+    return existingPositions.some(pos =>
+      this.calculateDistance(pos.x, pos.y, x, y) < minDistance
+    )
+  }
+
+  /**
+   * Encuentra una posición válida para una nueva ciudad evitando colisiones
+   */
+  static findValidPosition(
+    canvas: HTMLCanvasElement,
+    baseRadius: number,
+    baseAngle: number,
+    existingPositions: Array<{ x: number; y: number }>
+  ): { x: number; y: number } | null {
+    const centerX = canvas.width / 2
+    const centerY = canvas.height / 2
+    const { MIN_CITY_DISTANCE, MAX_PLACEMENT_ATTEMPTS, ANGLE_INCREMENT, RADIUS_INCREMENT, MAX_RADIUS_MULTIPLIER } = this.POSITION_CONFIG
+
+    let currentRadius = baseRadius
+    const maxRadius = baseRadius * MAX_RADIUS_MULTIPLIER
+
+    // Intentar con diferentes radios si es necesario
+    while (currentRadius <= maxRadius) {
+      let currentAngle = baseAngle
+      let attempts = 0
+
+      // Intentar diferentes ángulos en el radio actual
+      while (attempts < MAX_PLACEMENT_ATTEMPTS) {
+        const x = centerX + currentRadius * Math.cos(currentAngle)
+        const y = centerY + currentRadius * Math.sin(currentAngle)
+
+        // Verificar que esté dentro del canvas con margen
+        const margin = 50
+        if (x >= margin && x <= canvas.width - margin &&
+          y >= margin && y <= canvas.height - margin) {
+
+          if (!this.isPositionTooClose(x, y, existingPositions, MIN_CITY_DISTANCE)) {
+            return { x, y }
+          }
+        }
+
+        currentAngle += ANGLE_INCREMENT
+        attempts++
+      }
+
+      currentRadius += RADIUS_INCREMENT
+    }
+
+    // Si no encontramos posición válida, retornar posición base (fallback)
+    console.warn('No se pudo encontrar posición óptima, usando posición base')
+    return {
+      x: centerX + baseRadius * Math.cos(baseAngle),
+      y: centerY + baseRadius * Math.sin(baseAngle)
+    }
+  }
+
+  /**
+   * Calcula las posiciones de las ciudades de forma persistente y sin colisiones
+   */
+  static calculateCityPositions(cities: City[], canvas: HTMLCanvasElement): Map<string, { x: number; y: number }> {
+    const positions = new Map<string, { x: number; y: number }>()
+
+    // Validar parámetros de entrada
+    if (!cities.length || !canvas.width || !canvas.height) {
+      console.warn('Invalid parameters for city position calculation:', {
+        citiesLength: cities.length,
+        canvasWidth: canvas.width,
+        canvasHeight: canvas.height
+      })
+      return positions
+    }
+
+    const baseRadius = Math.min(canvas.width, canvas.height) * this.VISUALIZATION_CONFIG.CANVAS_RADIUS_FACTOR
+    const centerX = canvas.width / 2
+    const centerY = canvas.height / 2
+
+    // Validar que los valores calculados son finitos
+    if (!Number.isFinite(baseRadius) || !Number.isFinite(centerX) || !Number.isFinite(centerY)) {
+      console.warn('Invalid calculated values:', { baseRadius, centerX, centerY })
+      return positions
+    }
+
+    // Primero, cargar las posiciones ya existentes en el cache
+    const existingPositions: Array<{ x: number; y: number }> = []
+    cities.forEach(city => {
+      if (!city.name) return
+
+      if (this.cityPositionCache.has(city.name)) {
+        const cachedPosition = this.cityPositionCache.get(city.name)!
+        positions.set(city.name, cachedPosition)
+        existingPositions.push(cachedPosition)
+      }
+    })
+
+    // Luego, calcular posiciones para ciudades nuevas
+    let newCityIndex = 0
+    const newCities = cities.filter(city => city.name && !this.cityPositionCache.has(city.name))
+
+    for (const city of newCities) {
+      if (!city.name) continue
+
+      // Calcular ángulo base para distribución uniforme
+      const totalCities = this.cityPositionCache.size + newCities.length
+      const baseAngle = (newCityIndex * 2 * Math.PI) / Math.max(totalCities, 3) // Mínimo 3 para evitar divisiones pequeñas
+
+      // Encontrar posición válida
+      const validPosition = this.findValidPosition(canvas, baseRadius, baseAngle, existingPositions)
+
+      if (validPosition && Number.isFinite(validPosition.x) && Number.isFinite(validPosition.y)) {
+        // Guardar en cache y en el resultado
+        this.cityPositionCache.set(city.name, validPosition)
+        positions.set(city.name, validPosition)
+        existingPositions.push(validPosition)
+      } else {
+        console.warn(`❌ No se pudo posicionar la ciudad: ${city.name}`)
+      }
+
+      newCityIndex++
+    }
+
+    return positions
+  }
+
+  /**
+   * Obtiene estadísticas del cache de posiciones
+   */
+  static getPositionCacheStats(): { totalCities: number; cacheSize: number; cities: string[] } {
+    return {
+      totalCities: this.cityPositionCache.size,
+      cacheSize: this.cityPositionCache.size,
+      cities: Array.from(this.cityPositionCache.keys())
+    }
   }
 
   /**
@@ -210,6 +382,9 @@ export class RouteVisualizationController {
     img: HTMLImageElement | undefined,
     isHighlighted: boolean = false
   ) {
+    // Guardar el estado del contexto
+    ctx.save()
+
     const radius = isHighlighted ? 25 : 22
     const borderWidth = isHighlighted ? 3.5 : 2.5
     const iconSize = isHighlighted ? 32 : 28
@@ -225,9 +400,23 @@ export class RouteVisualizationController {
     ctx.fillStyle = gradient
     ctx.fill()
 
-    // Dibujar imagen si existe
-    if (img) {
-      ctx.drawImage(img, x - iconSize / 2, y - iconSize / 2, iconSize, iconSize)
+    // Dibujar imagen si existe y está completamente cargada
+    if (img && img.complete && img.naturalWidth > 0) {
+      try {
+        // Asegurar que el contexto está listo para dibujar la imagen
+        ctx.globalCompositeOperation = 'source-over'
+        ctx.globalAlpha = 1.0
+
+        ctx.drawImage(img, x - iconSize / 2, y - iconSize / 2, iconSize, iconSize)
+      } catch (e) {
+        console.error(`❌ Error drawing image for city ${cityName}:`, e)
+      }
+    } else {
+      // Dibujar un icono de fallback (un círculo simple)
+      ctx.beginPath()
+      ctx.arc(x, y, iconSize / 4, 0, 2 * Math.PI)
+      ctx.fillStyle = cityColor
+      ctx.fill()
     }
 
     // Dibujar borde principal
@@ -248,6 +437,9 @@ export class RouteVisualizationController {
 
     // Texto de la ciudad
     this.drawCityText(ctx, x, y, cityName, isHighlighted)
+
+    // Restaurar el estado del contexto
+    ctx.restore()
   }
 
   /**
@@ -300,67 +492,37 @@ export class RouteVisualizationController {
   }
 
   /**
-   * Calcula las posiciones de las ciudades en un círculo
-   */
-  static calculateCityPositions(cities: City[], canvas: HTMLCanvasElement): Map<string, { x: number; y: number }> {
-    const positions = new Map<string, { x: number; y: number }>()
-
-    // Validar parámetros de entrada
-    if (!cities.length || !canvas.width || !canvas.height) {
-      console.warn('Invalid parameters for city position calculation:', {
-        citiesLength: cities.length,
-        canvasWidth: canvas.width,
-        canvasHeight: canvas.height
-      })
-      return positions
-    }
-
-    const radius = Math.min(canvas.width, canvas.height) * this.VISUALIZATION_CONFIG.CANVAS_RADIUS_FACTOR
-    const centerX = canvas.width / 2
-    const centerY = canvas.height / 2
-
-    // Validar que los valores calculados son finitos
-    if (!Number.isFinite(radius) || !Number.isFinite(centerX) || !Number.isFinite(centerY)) {
-      console.warn('Invalid calculated values:', { radius, centerX, centerY })
-      return positions
-    }
-
-    cities.forEach((city, index) => {
-      if (!city.name) {
-        console.warn('City without name found, skipping:', city)
-        return
-      }
-
-      const angle = (index * 2 * Math.PI) / cities.length
-      const x = centerX + radius * Math.cos(angle)
-      const y = centerY + radius * Math.sin(angle)
-
-      // Validar que las coordenadas calculadas son finitas
-      if (Number.isFinite(x) && Number.isFinite(y)) {
-        positions.set(city.name, { x, y })
-      } else {
-        console.warn('Invalid position calculated for city:', city.name, { x, y, angle, index })
-      }
-    })
-
-    return positions
-  }
-
-  /**
    * Carga las imágenes SVG de todas las ciudades
    */
   static async loadCityImages(cities: City[]): Promise<Map<string, HTMLImageElement>> {
     const cityImages = new Map<string, HTMLImageElement>()
 
-    const imagePromises = cities.map(async (city) => {
-      const coloredSVG = this.createColoredSVG(city)
-      if (coloredSVG) {
-        try {
+    // Obtener ciudades únicas por nombre para evitar cargar duplicados
+    const uniqueCities = cities.filter((city, index, self) =>
+      index === self.findIndex(c => c.name === city.name)
+    )
+
+    const imagePromises = uniqueCities.map(async (city) => {
+      try {
+        const coloredSVG = this.createColoredSVG(city)
+        if (coloredSVG) {
           const img = await this.loadCitySVGImage(coloredSVG)
+
+          // Esperar a que la imagen esté completamente lista
+          await new Promise<void>((resolve) => {
+            if (img.complete && img.naturalWidth > 0) {
+              resolve()
+            } else {
+              img.onload = () => resolve()
+              // Timeout de seguridad
+              setTimeout(() => resolve(), 1000)
+            }
+          })
+
           cityImages.set(city.name, img)
-        } catch (e) {
-          console.error('Error loading city SVG image:', e)
         }
+      } catch (e) {
+        console.error(`❌ Error loading SVG image for city ${city.name}:`, e)
       }
     })
 
@@ -413,9 +575,6 @@ export class RouteVisualizationController {
         }
 
         const isHighlighted = route.id && highlightedRouteIds ? highlightedRouteIds.has(route.id) : false
-
-        // Por defecto tratamos todas las rutas como directas
-        // Puedes ajustar esta lógica según las propiedades de tu modelo Route
 
         this.drawRoute(
           ctx,
@@ -534,7 +693,7 @@ export class RouteVisualizationController {
 
     const cityColors = this.getCityColors(cities)
 
-    // Calcular posiciones
+    // Calcular posiciones (ahora persistentes)
     const positions = this.calculateCityPositions(cities, canvas)
 
     // Debug información si hay problemas
@@ -685,12 +844,14 @@ export class RouteVisualizationController {
       console.log(`  City ${index + 1}:`, {
         name: city.name,
         id: city.id,
-        position: position ? { x: position.x, y: position.y } : 'No position',
-        hasValidPosition: position ? Number.isFinite(position.x) && Number.isFinite(position.y) : false
+        position: position ? { x: Math.round(position.x), y: Math.round(position.y) } : 'No position',
+        hasValidPosition: position ? Number.isFinite(position.x) && Number.isFinite(position.y) : false,
+        isInCache: this.cityPositionCache.has(city.name)
       })
     })
 
     console.log('📍 Position Map size:', positions.size)
+    console.log('💾 Cache stats:', this.getPositionCacheStats())
     console.groupEnd()
   }
 }

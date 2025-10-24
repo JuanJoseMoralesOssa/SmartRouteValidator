@@ -11,7 +11,10 @@ interface RouteEditProps {
 
 const RouteEdit = ({ route, onEditRoute }: RouteEditProps) => {
   const { isOpen, openModal, closeModal } = useModal()
-  const { handleUpdate } = useRouteController()
+  const { handleUpdate } = useRouteController({
+    enableVisualization: true,
+    visualizationDelay: 2000 // 2000ms entre cada paso para mejor visualización
+  })
 
   const handleClick = () => {
     onEditRoute(route)

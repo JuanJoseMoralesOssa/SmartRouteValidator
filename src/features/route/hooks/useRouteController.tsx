@@ -3,17 +3,32 @@ import useRouteStore from "../stores/useRouteStore";
 import { Route } from "@/shared/types/entities/Route";
 import { routeService } from "../services/RouteService";
 import { mockRoutes } from "@/shared/types/mocks/MockRoutes";
+import { useToast } from "@/shared/hooks/toast/useToast";
+import { useConfirm } from "@/shared/hooks/toast/useConfirm";
 
 interface UseRouteControllerOptions {
   validate?: (route: Route | Partial<Route>) => string[];
   onError?: (error: string) => void;
+  enableVisualization?: boolean; // Habilitar animación paso a paso
+  visualizationDelay?: number; // Delay entre pasos (ms)
 }
 
+/**
+ * Hook simplificado para manejar rutas
+ * - Validación pura (sin efectos secundarios)
+ * - Visualización opcional y controlada
+ * - Flujo claro y lineal
+ */
 export function useRouteController(options?: UseRouteControllerOptions) {
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
 
   const store = useRouteStore();
+  const toast = useToast();
+  const confirm = useConfirm();
+
+  // Helper para pausar (visualización)
+  const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
   // Validación
   const validateRoute = (routeToValidate: Route | Partial<Route>): boolean => {
@@ -39,25 +54,36 @@ export function useRouteController(options?: UseRouteControllerOptions) {
     return true;
   };
 
-  // Crear nueva ruta
-  const handleCreate = (routeData: Route, onSuccess?: (newRoute: Route) => void) => {
+  // Crear nueva ruta con visualización opcional
+  const handleCreate = async (routeData: Route, onSuccess?: (newRoute: Route) => void) => {
     if (!validateRoute(routeData)) return;
 
     try {
       setLoading(true);
-      const newRoute = routeService.create(routeData);
-      setErrors([]);
-      // Usar el método correcto del store de rutas
-      store.addRoute(newRoute);
+      store.clearHighlightedRoutes();
 
+      // Validar y crear (el servicio retorna las rutas exploradas)
+      const { route: newRoute, validation } = await routeService.createWithValidation(routeData);
+
+      // Visualizar el proceso si está habilitado
+      if (options?.enableVisualization && validation.exploredRoutes.length > 0) {
+        for (const routeId of validation.exploredRoutes) {
+          store.addHighlightedRoute(routeId);
+          await sleep(options.visualizationDelay || 500);
+        }
+      }
+
+      store.addRoute(newRoute);
+      setErrors([]);
       onSuccess?.(newRoute);
-      console.log('Nueva ruta creada:', newRoute);
+      toast.success('Guardado con éxito');
 
     } catch (error) {
       console.error('Error creating route:', error);
       const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
       setErrors([errorMessage]);
       options?.onError?.(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -76,32 +102,39 @@ export function useRouteController(options?: UseRouteControllerOptions) {
 
     try {
       setLoading(true);
-      // Usar el método genérico heredado del Service base
-      await routeService.updateById(id, routeData);
+      store.clearHighlightedRoutes();
 
-      // Actualizar el store
+      // Validar y actualizar
+      const validation = await routeService.updateWithValidation(id, routeData);
+
+      // Visualizar el proceso si está habilitado
+      if (options?.enableVisualization && validation.exploredRoutes.length > 0) {
+        for (const routeId of validation.exploredRoutes) {
+          store.addHighlightedRoute(routeId);
+          await sleep(options.visualizationDelay || 500);
+        }
+      }
+
       store.updateRoute(id, routeData);
 
-      // Obtener la ruta actualizada del store para el callback
       const updatedRoute = store.routes.find(r => r.id === id);
       if (updatedRoute) {
         onSuccess?.(updatedRoute);
-        console.log('Ruta actualizada:', updatedRoute, routeData);
       }
 
       setErrors([]);
+      toast.success('Actualizado con éxito');
 
     } catch (error) {
       console.error('Error updating route:', error);
       const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
       setErrors([errorMessage]);
       options?.onError?.(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
-  };
-
-  // Eliminar ruta
+  };  // Eliminar ruta
   const handleDelete = async (id: string | number, onSuccess?: () => void) => {
     try {
       setLoading(true);
@@ -112,6 +145,17 @@ export function useRouteController(options?: UseRouteControllerOptions) {
 
       onSuccess?.();
       console.log('Ruta eliminada:', id);
+      // confirm(
+      //   'Eliminar elemento',
+      //   '¿Estás seguro que deseas eliminar este registro?',
+      //   () => toast.success('Eliminado correctamente'),
+      //   () => toast.info('Cancelado')
+      // );
+      // descomenta en el otro codigo el use Confirm con toast
+      confirm(
+        'Eliminar elemento',
+        '¿Estás seguro que deseas eliminar este registro?',
+      );
 
     } catch (error) {
       console.error('Error deleting route:', error);
@@ -150,18 +194,65 @@ export function useRouteController(options?: UseRouteControllerOptions) {
     }
   };
 
-  const loadExample = () => {
-    for (const route of store.routes) {
-      if (route.id) {
-        handleDelete(route.id);
-      }
-    }
-    for (const route of mockRoutes) {
-      handleCreate(route);
-    }
-  };
+  // Cargar ejemplos con visualización opcional
+  const loadExample = async () => {
+    try {
+      setLoading(true);
 
-  return {
+      // Eliminar todas las rutas existentes
+      for (const route of store.routes) {
+        if (route.id) {
+          await routeService.deleteById(route.id);
+        }
+      }
+
+      // Limpiar todo de una vez
+      store.setRoutes([]);
+      store.clearHighlightedRoutes();
+
+      // Acumular todas las nuevas rutas
+      const newRoutes: Route[] = [];
+
+      // Crear las rutas de ejemplo de forma secuencial
+      for (const route of mockRoutes) {
+        if (!validateRoute(route)) continue;
+
+        store.clearHighlightedRoutes();
+
+        // Validar y crear la ruta
+        const { route: newRoute, validation } = await routeService.createWithValidation(route);
+
+        // Visualizar el proceso si está habilitado
+        if (options?.enableVisualization && validation.exploredRoutes.length > 0) {
+          for (const routeId of validation.exploredRoutes) {
+            store.addHighlightedRoute(routeId);
+            await sleep(options.visualizationDelay || 500);
+          }
+          // Limpiar antes de la siguiente ruta
+          await sleep(300);
+          store.clearHighlightedRoutes();
+        }
+
+        // Acumular en lugar de agregar inmediatamente
+        newRoutes.push(newRoute);
+      }
+
+      // Agregar todas las rutas de una sola vez para evitar múltiples re-renders
+      store.setRoutes(newRoutes);
+
+      toast.success('Ejemplos cargados correctamente');
+      setErrors([]);
+
+    } catch (error) {
+      console.error('Error loading examples:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Error cargando ejemplos';
+      setErrors([errorMessage]);
+      toast.error(errorMessage);
+      store.clearHighlightedRoutes();
+    } finally {
+      setLoading(false);
+    }
+  }; return {
     // Estado
     loading,
     errors,

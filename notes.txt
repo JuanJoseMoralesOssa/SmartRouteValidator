@@ -55,7 +55,7 @@ Validar:
   donde cada servicio maneje una sola entidad.
 
 Contras:
-  Antes pensaba que seguir toda esta infraestructura sobrediseñar la solucion ya que
+  Antes pensaba que seguir toda esta infraestructura era sobrediseñar la solucion ya que
   para solo dos entidades me parecia que estaba sobre pensando la solucion. Sin embargo,
   me di cuenta por esa misma razon era una buena opcion porque sino tendria codigo repetido
   y redundante en cada controlador, si seguia el diseño tradicional orientado a POO, el controlador
