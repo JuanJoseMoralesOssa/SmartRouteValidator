@@ -28,7 +28,7 @@ function TableBody() {
             <div className='flex items-center'>
               <div className={`h-4 w-4 rounded-full mr-3 shadow-sm ${route.destiny?.color ? '' : 'bg-green-500'}`} style={route.destiny?.color ? { backgroundColor: route.destiny.color } : {}}></div>
               <span className='text-sm font-medium text-gray-900'>
-                {route.destiny?.name || 'Sin destino'}
+                {route.destiny?.name || 'Without destination'}
               </span>
             </div>
           </td>
@@ -83,9 +83,9 @@ function TableBody() {
                 variant="danger"
                 onClick={() => route.id && handleDelete(route.id)}
                 icon="🗑️"
-                aria-label={`Eliminar ruta de ${route.origin?.name} a ${route.destiny?.name}`}
+                aria-label={`Delete route from ${route.origin?.name} to ${route.destiny?.name}`}
               >
-                Eliminar
+                Delete
               </ActionButton>
             </div>
           </td>

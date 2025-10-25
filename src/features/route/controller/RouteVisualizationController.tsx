@@ -11,13 +11,10 @@ export class RouteVisualizationController {
   // Cache persistente de posiciones para evitar reposicionamiento
   private static readonly cityPositionCache = new Map<string, { x: number; y: number }>()
 
-  // Configuración de espaciado y distribución
+  // Configuración de espaciado y distribución por sectores dinámicos
   private static readonly POSITION_CONFIG = {
-    MIN_CITY_DISTANCE: 80, // Distancia mínima entre ciudades
-    MAX_PLACEMENT_ATTEMPTS: 50, // Máximo intentos para encontrar posición válida
-    ANGLE_INCREMENT: Math.PI / 20, // Incremento de ángulo por intento (9 grados)
-    RADIUS_INCREMENT: 20, // Incremento de radio si no hay espacio
-    MAX_RADIUS_MULTIPLIER: 1.8 // Máximo multiplicador del radio base
+    MIN_SECTOR_SIZE: 150, // Tamaño mínimo de un sector en píxeles
+    MARGIN: 60 // Margen desde los bordes del canvas
   }
 
   /**
@@ -93,68 +90,119 @@ export class RouteVisualizationController {
   }
 
   /**
-   * Verificar si una posición está muy cerca de otras ciudades existentes
+   * Calcula el número óptimo de filas y columnas basado en el número de ciudades
+   *
+   * Ejemplos de distribución dinámica:
+   * - 1-2 ciudades: 1x2 o 2x1 (según proporción del canvas)
+   * - 3-4 ciudades: 2x2
+   * - 5-6 ciudades: 2x3 o 3x2
+   * - 7-9 ciudades: 3x3
+   * - 10-12 ciudades: 3x4 o 4x3
+   * - 13-16 ciudades: 4x4
+   * Y así sucesivamente...
+   *
+   * El algoritmo:
+   * 1. Calcula la raíz cuadrada del número de ciudades
+   * 2. Ajusta según la proporción del canvas (más ancho = más columnas)
+   * 3. Verifica que los sectores no sean demasiado pequeños
    */
-  static isPositionTooClose(
-    x: number,
-    y: number,
-    existingPositions: Array<{ x: number; y: number }>,
-    minDistance: number
-  ): boolean {
-    return existingPositions.some(pos =>
-      this.calculateDistance(pos.x, pos.y, x, y) < minDistance
-    )
+  static calculateOptimalGrid(
+    numCities: number,
+    canvasWidth: number,
+    canvasHeight: number
+  ): { rows: number; cols: number } {
+    if (numCities === 0) return { rows: 1, cols: 1 }
+
+    // Calcular la proporción del canvas
+    const aspectRatio = canvasWidth / canvasHeight
+
+    // Calcular número de columnas basado en la raíz cuadrada y la proporción
+    const sqrtCities = Math.sqrt(numCities)
+    let cols = Math.ceil(sqrtCities * Math.sqrt(aspectRatio))
+    let rows = Math.ceil(numCities / cols)
+
+    // Ajustar para asegurar que todos los sectores quepan
+    while (cols * rows < numCities) {
+      rows++
+    }
+
+    // Verificar que los sectores no sean demasiado pequeños
+    const { MIN_SECTOR_SIZE, MARGIN } = this.POSITION_CONFIG
+    const availableWidth = canvasWidth - (2 * MARGIN)
+    const availableHeight = canvasHeight - (2 * MARGIN)
+
+    const sectorWidth = availableWidth / cols
+    const sectorHeight = availableHeight / rows
+
+    // Si los sectores son muy pequeños, reducir el número de columnas
+    if (sectorWidth < MIN_SECTOR_SIZE || sectorHeight < MIN_SECTOR_SIZE) {
+      cols = Math.max(1, Math.floor(availableWidth / MIN_SECTOR_SIZE))
+      rows = Math.ceil(numCities / cols)
+    }
+
+    return { rows, cols }
   }
 
   /**
-   * Encuentra una posición válida para una nueva ciudad evitando colisiones
+   * Calcula las dimensiones y posiciones de los sectores en el canvas
    */
-  static findValidPosition(
+  static calculateSectorGrid(
     canvas: HTMLCanvasElement,
-    baseRadius: number,
-    baseAngle: number,
-    existingPositions: Array<{ x: number; y: number }>
-  ): { x: number; y: number } {
-    const centerX = canvas.width / 2
-    const centerY = canvas.height / 2
-    const { MIN_CITY_DISTANCE, MAX_PLACEMENT_ATTEMPTS, ANGLE_INCREMENT, RADIUS_INCREMENT, MAX_RADIUS_MULTIPLIER } = this.POSITION_CONFIG
+    numCities: number
+  ): {
+    sectorWidth: number
+    sectorHeight: number
+    gridStartX: number
+    gridStartY: number
+    rows: number
+    cols: number
+  } {
+    const { MARGIN } = this.POSITION_CONFIG
 
-    let currentRadius = baseRadius
-    const maxRadius = baseRadius * MAX_RADIUS_MULTIPLIER
-    const margin = 50
+    const availableWidth = canvas.width - (2 * MARGIN)
+    const availableHeight = canvas.height - (2 * MARGIN)
 
-    while (currentRadius <= maxRadius) {
-      let currentAngle = baseAngle
-      let attempts = 0
+    const { rows, cols } = this.calculateOptimalGrid(numCities, canvas.width, canvas.height)
 
-      while (attempts < MAX_PLACEMENT_ATTEMPTS) {
-        const x = centerX + currentRadius * Math.cos(currentAngle)
-        const y = centerY + currentRadius * Math.sin(currentAngle)
+    const sectorWidth = availableWidth / cols
+    const sectorHeight = availableHeight / rows
 
-        const isInBounds = x >= margin && x <= canvas.width - margin && y >= margin && y <= canvas.height - margin
-        const isFarEnough = !this.isPositionTooClose(x, y, existingPositions, MIN_CITY_DISTANCE)
-
-        if (isInBounds && isFarEnough) {
-          return { x, y }
-        }
-
-        currentAngle += ANGLE_INCREMENT
-        attempts++
-      }
-
-      currentRadius += RADIUS_INCREMENT
-    }
-
-    // Fallback a posición base
-    console.warn('No se pudo encontrar posición óptima, usando posición base')
     return {
-      x: centerX + baseRadius * Math.cos(baseAngle),
-      y: centerY + baseRadius * Math.sin(baseAngle)
+      sectorWidth,
+      sectorHeight,
+      gridStartX: MARGIN,
+      gridStartY: MARGIN,
+      rows,
+      cols
+    }
+  }  /**
+   * Calcula la posición de una ciudad basada en su índice usando el sistema de sectores dinámico
+   * IMPORTANTE: Cada ciudad ocupa su propio sector único, sin superposición
+   */
+  static calculateCityPositionInSector(
+    cityIndex: number,
+    totalCities: number,
+    canvas: HTMLCanvasElement
+  ): { x: number; y: number } {
+    const { sectorWidth, sectorHeight, gridStartX, gridStartY, cols } =
+      this.calculateSectorGrid(canvas, totalCities)
+
+    // Cada ciudad tiene su propio sector único (sin módulo)
+    const sectorRow = Math.floor(cityIndex / cols)
+    const sectorCol = cityIndex % cols
+
+    // Calcular el centro del sector
+    const sectorCenterX = gridStartX + (sectorCol * sectorWidth) + (sectorWidth / 2)
+    const sectorCenterY = gridStartY + (sectorRow * sectorHeight) + (sectorHeight / 2)
+
+    return {
+      x: sectorCenterX,
+      y: sectorCenterY
     }
   }
 
   /**
-   * Calcula las posiciones de las ciudades de forma persistente y sin colisiones
+   * Calcula las posiciones de las ciudades usando el sistema de sectores
    */
   static calculateCityPositions(cities: City[], canvas: HTMLCanvasElement): Map<string, { x: number; y: number }> {
     const positions = new Map<string, { x: number; y: number }>()
@@ -169,58 +217,49 @@ export class RouteVisualizationController {
       return positions
     }
 
-    const baseRadius = Math.min(canvas.width, canvas.height) * this.VISUALIZATION_CONFIG.CANVAS_RADIUS_FACTOR
-    const centerX = canvas.width / 2
-    const centerY = canvas.height / 2
-
-    // Validar que los valores calculados son finitos
-    if (!Number.isFinite(baseRadius) || !Number.isFinite(centerX) || !Number.isFinite(centerY)) {
-      console.warn('Invalid calculated values:', { baseRadius, centerX, centerY })
+    // Validar que las dimensiones del canvas son válidas
+    if (!Number.isFinite(canvas.width) || !Number.isFinite(canvas.height)) {
+      console.warn('Invalid canvas dimensions:', { width: canvas.width, height: canvas.height })
       return positions
     }
 
     // Primero, cargar las posiciones ya existentes en el cache
-    const existingPositions: Array<{ x: number; y: number }> = []
-    cities.forEach(city => {
-      if (!city.name) return
+    const existingCities: City[] = []
+    const newCities: City[] = []
+
+    for (const city of cities) {
+      if (!city.name) continue
 
       if (this.cityPositionCache.has(city.name)) {
         const cachedPosition = this.cityPositionCache.get(city.name)!
         positions.set(city.name, cachedPosition)
-        existingPositions.push(cachedPosition)
+        existingCities.push(city)
+      } else {
+        newCities.push(city)
       }
-    })
+    }
 
-    // Luego, calcular posiciones para ciudades nuevas
-    let newCityIndex = 0
-    const newCities = cities.filter(city => city.name && !this.cityPositionCache.has(city.name))
+    // Calcular posiciones para ciudades nuevas usando el sistema de sectores
+    const startIndex = existingCities.length
 
-    for (const city of newCities) {
+    for (let index = 0; index < newCities.length; index++) {
+      const city = newCities[index]
       if (!city.name) continue
 
-      // Calcular ángulo base para distribución uniforme
-      const totalCities = this.cityPositionCache.size + newCities.length
-      const baseAngle = (newCityIndex * 2 * Math.PI) / Math.max(totalCities, 3) // Mínimo 3 para evitar divisiones pequeñas
+      const cityIndex = startIndex + index
+      const position = this.calculateCityPositionInSector(cityIndex, cities.length, canvas)
 
-      // Encontrar posición válida
-      const validPosition = this.findValidPosition(canvas, baseRadius, baseAngle, existingPositions)
-
-      if (validPosition && Number.isFinite(validPosition.x) && Number.isFinite(validPosition.y)) {
+      if (position && Number.isFinite(position.x) && Number.isFinite(position.y)) {
         // Guardar en cache y en el resultado
-        this.cityPositionCache.set(city.name, validPosition)
-        positions.set(city.name, validPosition)
-        existingPositions.push(validPosition)
+        this.cityPositionCache.set(city.name, position)
+        positions.set(city.name, position)
       } else {
         console.warn(`❌ No se pudo posicionar la ciudad: ${city.name}`)
       }
-
-      newCityIndex++
     }
 
     return positions
-  }
-
-  /**
+  }  /**
    * Obtiene estadísticas del cache de posiciones
    */
   static getPositionCacheStats(): { totalCities: number; cacheSize: number; cities: string[] } {
@@ -236,12 +275,146 @@ export class RouteVisualizationController {
    */
   static drawEndPoint(ctx: CanvasRenderingContext2D, x: number, y: number, color: string) {
     ctx.beginPath()
-    ctx.arc(x, y, 3, 0, 2 * Math.PI)
+    ctx.arc(x, y, 2, 0, 2 * Math.PI)
     ctx.fillStyle = color
     ctx.fill()
     ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)'
-    ctx.lineWidth = 1
+    ctx.lineWidth = 0.8
     ctx.stroke()
+  }
+
+  /**
+   * Dibuja el peso de una ruta en el punto medio
+   */
+  static drawRouteWeight(
+    ctx: CanvasRenderingContext2D,
+    startX: number,
+    startY: number,
+    endX: number,
+    endY: number,
+    weight: number,
+    options: { isHighlighted?: boolean; controlPoint?: { cpX: number; cpY: number } } = {}
+  ) {
+    const { isHighlighted = false, controlPoint } = options
+
+    // Calcular el punto medio
+    let midX: number
+    let midY: number
+
+    if (controlPoint) {
+      // Para curvas Bézier, el punto medio está en t=0.5
+      // B(t) = (1-t)²P0 + 2(1-t)tP1 + t²P2
+      const t = 0.5
+      midX = (1 - t) * (1 - t) * startX + 2 * (1 - t) * t * controlPoint.cpX + t * t * endX
+      midY = (1 - t) * (1 - t) * startY + 2 * (1 - t) * t * controlPoint.cpY + t * t * endY
+
+      // Calcular vector perpendicular para desplazar el peso hacia afuera de la curva
+      // Esto evita que el peso se sobreponga con otras rutas
+      const tangentX = 2 * (1 - t) * (controlPoint.cpX - startX) + 2 * t * (endX - controlPoint.cpX)
+      const tangentY = 2 * (1 - t) * (controlPoint.cpY - startY) + 2 * t * (endY - controlPoint.cpY)
+
+      // Vector perpendicular (rotado 90 grados)
+      const perpX = -tangentY
+      const perpY = tangentX
+
+      // Normalizar el vector perpendicular
+      const length = Math.sqrt(perpX * perpX + perpY * perpY)
+      if (length > 0) {
+        const unitPerpX = perpX / length
+        const unitPerpY = perpY / length
+
+        // Desplazar el punto medio hacia afuera de la curva
+        const offsetDistance = 15 // Distancia de desplazamiento
+        midX += unitPerpX * offsetDistance
+        midY += unitPerpY * offsetDistance
+      }
+    } else {
+      // Para líneas rectas, desplazar ligeramente hacia arriba para evitar sobreposición
+      midX = (startX + endX) / 2
+      midY = (startY + endY) / 2
+
+      // Calcular vector perpendicular para líneas rectas
+      const dx = endX - startX
+      const dy = endY - startY
+      const length = Math.sqrt(dx * dx + dy * dy)
+
+      if (length > 0) {
+        // Vector perpendicular (rotado 90 grados hacia arriba)
+        const perpX = -dy / length
+        const perpY = dx / length
+
+        // Desplazar ligeramente hacia arriba
+        const offsetDistance = 12
+        midX += perpX * offsetDistance
+        midY += perpY * offsetDistance
+      }
+    }
+
+    // Configuración de estilo basado en si está resaltada
+    const fontSize = isHighlighted ? 13 : 11
+    const padding = isHighlighted ? 6 : 5
+    const textColor = isHighlighted ? '#FFD700' : '#FFFFFF'
+    const bgColor = isHighlighted ? 'rgba(0, 0, 0, 0.95)' : 'rgba(0, 0, 0, 0.85)'
+    const borderColor = isHighlighted ? '#FFD700' : 'rgba(255, 255, 255, 0.3)'
+    const borderWidth = isHighlighted ? 2 : 1.2
+
+    // Configurar fuente
+    ctx.font = `bold ${fontSize}px "Segoe UI", Arial, sans-serif`
+    ctx.textAlign = 'center'
+    ctx.textBaseline = 'middle'
+
+    // Medir texto
+    const text = weight.toString()
+    const textMetrics = ctx.measureText(text)
+    const textWidth = textMetrics.width
+    const textHeight = fontSize
+
+    // Calcular dimensiones del fondo
+    const boxWidth = textWidth + padding * 2
+    const boxHeight = textHeight + padding * 1.5
+
+    // Dibujar fondo con borde
+    ctx.fillStyle = bgColor
+    ctx.strokeStyle = borderColor
+    ctx.lineWidth = borderWidth
+
+    // Fondo redondeado
+    const radius = 6
+    const boxX = midX - boxWidth / 2
+    const boxY = midY - boxHeight / 2
+
+    ctx.beginPath()
+    ctx.moveTo(boxX + radius, boxY)
+    ctx.lineTo(boxX + boxWidth - radius, boxY)
+    ctx.quadraticCurveTo(boxX + boxWidth, boxY, boxX + boxWidth, boxY + radius)
+    ctx.lineTo(boxX + boxWidth, boxY + boxHeight - radius)
+    ctx.quadraticCurveTo(boxX + boxWidth, boxY + boxHeight, boxX + boxWidth - radius, boxY + boxHeight)
+    ctx.lineTo(boxX + radius, boxY + boxHeight)
+    ctx.quadraticCurveTo(boxX, boxY + boxHeight, boxX, boxY + boxHeight - radius)
+    ctx.lineTo(boxX, boxY + radius)
+    ctx.quadraticCurveTo(boxX, boxY, boxX + radius, boxY)
+    ctx.closePath()
+
+    ctx.fill()
+    ctx.stroke()
+
+    // Dibujar sombra si está resaltada
+    if (isHighlighted) {
+      ctx.shadowColor = 'rgba(255, 215, 0, 0.6)'
+      ctx.shadowBlur = 10
+      ctx.shadowOffsetX = 0
+      ctx.shadowOffsetY = 0
+    }
+
+    // Dibujar texto
+    ctx.fillStyle = textColor
+    ctx.fillText(text, midX, midY)
+
+    // Resetear sombra
+    if (isHighlighted) {
+      ctx.shadowColor = 'transparent'
+      ctx.shadowBlur = 0
+    }
   }
 
   /**
@@ -303,7 +476,8 @@ export class RouteVisualizationController {
     endY: number,
     isHighlighted: boolean = false,
     isExplored: boolean = false,
-    controlPoint?: { cpX: number; cpY: number }
+    controlPoint?: { cpX: number; cpY: number },
+    weight?: number
   ) {
     // Validar que todas las coordenadas son números finitos
     if (!Number.isFinite(startX) || !Number.isFinite(startY) ||
@@ -330,7 +504,7 @@ export class RouteVisualizationController {
 
     if (isHighlighted) {
       // Ruta activa: dorado brillante
-      lineWidth = 8
+      lineWidth = 5
       colors = {
         start: 'rgba(255, 215, 0, 1)',    // Dorado brillante
         middle: 'rgba(255, 165, 0, 1)',   // Naranja brillante
@@ -338,14 +512,14 @@ export class RouteVisualizationController {
       }
     } else if (isExplored) {
       // Ruta explorada (backtracked): azul semitransparente
-      lineWidth = 3.5
+      lineWidth = 2.5
       colors = {
         start: 'rgba(100, 149, 237, 0.5)',  // Azul cornflower semitransparente
         end: 'rgba(65, 105, 225, 0.5)'      // Azul royal semitransparente
       }
     } else {
       // Ruta normal: colores por defecto
-      lineWidth = 2.5
+      lineWidth = 1.8
       const defaultColors = this.VISUALIZATION_CONFIG.DIRECT_ROUTE_COLORS
       colors = {
         start: `rgba(${this.hexToRgb(defaultColors.START)}, 0.6)`,
@@ -370,11 +544,11 @@ export class RouteVisualizationController {
     // Determinar tamaño de flecha según estado
     let arrowSize: number
     if (isHighlighted) {
-      arrowSize = 18
-    } else if (isExplored) {
       arrowSize = 12
+    } else if (isExplored) {
+      arrowSize = 8
     } else {
-      arrowSize = 10
+      arrowSize = 7
     }
 
     // Calcular punto donde termina la línea (antes de la flecha)
@@ -383,7 +557,12 @@ export class RouteVisualizationController {
 
     if (controlPoint) {
       // Para curvas, calcular el punto donde terminará la línea (antes de la flecha)
-      const tEnd = 0.97 // Punto donde termina la línea
+      const tEnd = 0.95 // Punto donde termina la línea (ajustado para más espacio)
+
+      // Calcular el punto en la curva donde termina la línea
+      lineEndX = (1 - tEnd) * (1 - tEnd) * startX + 2 * (1 - tEnd) * tEnd * controlPoint.cpX + tEnd * tEnd * endX
+      lineEndY = (1 - tEnd) * (1 - tEnd) * startY + 2 * (1 - tEnd) * tEnd * controlPoint.cpY + tEnd * tEnd * endY
+
       arrowEndX = endX
       arrowEndY = endY
 
@@ -472,6 +651,11 @@ export class RouteVisualizationController {
 
     // Puntos decorativos en los extremos
     this.drawEndPoint(ctx, startX, startY, arrowColor)
+
+    // Dibujar el peso de la ruta si existe
+    if (weight !== undefined) {
+      this.drawRouteWeight(ctx, startX, startY, endX, endY, weight, { isHighlighted, controlPoint })
+    }
   }
 
   /**
@@ -503,9 +687,9 @@ export class RouteVisualizationController {
     // Guardar el estado del contexto
     ctx.save()
 
-    const radius = isHighlighted ? 25 : 22
-    const borderWidth = isHighlighted ? 3.5 : 2.5
-    const iconSize = isHighlighted ? 32 : 28
+    const radius = isHighlighted ? 18 : 16
+    const borderWidth = isHighlighted ? 2.5 : 1.8
+    const iconSize = isHighlighted ? 24 : 20
 
     // Dibujar círculo de fondo con gradiente
     const gradient = ctx.createRadialGradient(x, y, 0, x, y, radius)
@@ -570,8 +754,8 @@ export class RouteVisualizationController {
     cityName: string,
     isHighlighted: boolean = false
   ) {
-    const fontSize = isHighlighted ? 16 : 14
-    const textY = y + (isHighlighted ? 38 : 32)
+    const fontSize = isHighlighted ? 13 : 11
+    const textY = y + (isHighlighted ? 28 : 24)
 
     ctx.font = `bold ${fontSize}px "Segoe UI", Arial, sans-serif`
     ctx.textAlign = 'center'
@@ -711,8 +895,8 @@ export class RouteVisualizationController {
     // Si hay múltiples rutas, distribuir los puntos de entrada alrededor del círculo
     let angleOffset = 0
     if (totalRoutes > 1) {
-      // Rango de dispersión (en radianes): ±20 grados por defecto
-      const maxSpread = Math.PI / 9 // ~20 grados
+      // Rango de dispersión (en radianes): ±25 grados aumentado para mejor separación
+      const maxSpread = Math.PI / 7.2 // ~25 grados (anteriormente era ~20)
       const spreadPerRoute = (maxSpread * 2) / Math.max(totalRoutes - 1, 1)
       angleOffset = -maxSpread + (curveIndex * spreadPerRoute)
     }
@@ -844,8 +1028,8 @@ export class RouteVisualizationController {
 
         if (routeCount > 1) {
           // Incrementar la curvatura según el índice
-          const baseCurve = 40 // Curvatura base
-          const curveIncrement = 25 // Incremento por cada ruta adicional
+          const baseCurve = 50 // Curvatura base aumentada
+          const curveIncrement = 35 // Incremento por cada ruta adicional aumentado
           curveIntensity = baseCurve + (curveIndex * curveIncrement)
 
           // Determinar si la curva va hacia arriba o abajo
@@ -870,7 +1054,8 @@ export class RouteVisualizationController {
           endY,
           isHighlighted,
           isExplored,
-          controlPoint
+          controlPoint,
+          route.cost
         )
       }
     })
@@ -1085,9 +1270,9 @@ export class RouteVisualizationController {
    * Configuración de constantes para la visualización
    */
   static readonly VISUALIZATION_CONFIG = {
-    CIRCLE_RADIUS: 20,
-    LINE_MARGIN: 8,
-    CANVAS_RADIUS_FACTOR: 0.4,
+    CIRCLE_RADIUS: 16,
+    LINE_MARGIN: 6,
+    CANVAS_RADIUS_FACTOR: 0.45, // Factor aumentado para usar más espacio del canvas
     DIRECT_ROUTE_COLORS: {
       START: '#4FC3F7',
       END: '#29B6F6'

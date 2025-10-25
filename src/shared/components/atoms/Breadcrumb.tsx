@@ -20,7 +20,7 @@ export default function Breadcrumb() {
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
         </svg>
         <Link to="/cities" className="hover:text-blue-600 transition-colors">
-          Ciudades
+          Cities
         </Link>
         {id && (
           <>

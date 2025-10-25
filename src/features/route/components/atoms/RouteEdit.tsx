@@ -27,9 +27,9 @@ const RouteEdit = ({ route, onEditRoute }: RouteEditProps) => {
         onClick={handleClick}
         customColor={route.color}
         icon="✏️"
-        aria-label={`Editar ruta de ${route.origin?.name} a ${route.destiny?.name}`}
+        aria-label={`Edit route from ${route.origin?.name} to ${route.destiny?.name}`}
       >
-        Editar
+        Edit
       </ActionButton>
       <RouteModalForm
         isOpen={isOpen}

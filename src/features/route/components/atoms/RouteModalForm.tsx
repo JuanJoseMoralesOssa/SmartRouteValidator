@@ -12,10 +12,10 @@ import { City } from '@/shared/types/entities/City'
 // import { mockCities } from '@/shared/types/mocks/MockCities'
 
 const formSchema = z.object({
-  origin: z.string().min(1, 'Requerido'),
-  destiny: z.string().min(1, 'Requerido'),
+  origin: z.string().min(1, 'Required'),
+  destiny: z.string().min(1, 'Required'),
   cost: z.union([
-    z.number().min(0, 'Debe ser mayor o igual a 0'),
+    z.number().min(0, 'Must be greater than or equal to 0'),
     z.nan(),
     z.undefined()
   ]).optional(),
@@ -71,7 +71,7 @@ export default function RouteModalForm({ isOpen, onClose, onSubmit, initialData 
       }
       reset(resetValues)
 
-      // Establecer las ciudades seleccionadas
+      // Set the selected cities
       if (initialData?.origin) {
         setSelectedOrigin(initialData.origin)
       } else {
@@ -84,7 +84,7 @@ export default function RouteModalForm({ isOpen, onClose, onSubmit, initialData 
         setSelectedDestiny(null)
       }
     } else {
-      // Limpiar completamente el formulario cuando se cierra
+      // Clear the form completely when closing
       reset({
         origin: '',
         destiny: '',
@@ -139,15 +139,15 @@ export default function RouteModalForm({ isOpen, onClose, onSubmit, initialData 
       isOpen={isOpen}
       onClose={onClose}
       className='max-h-fit h-fit overflow-y-auto'
-      title={initialData ? 'Editar Ruta' : 'Nueva Ruta'}
+      title={initialData ? 'Edit Route' : 'New Route'}
     >
       <form onSubmit={handleSubmit(submitForm)} className="space-y-4 flex flex-col justify-between h-fit">
         <div>
           <Autocomplete
-            label="Ciudad de Origen"
+            label="Origin City"
             options={cityOptions}
             displayKey="name"
-            placeholder="Buscar ciudad de origen..."
+            placeholder="Search origin city..."
             onSelect={handleOriginSelect}
             initialValue={selectedOrigin?.name || ''}
             required
@@ -157,10 +157,10 @@ export default function RouteModalForm({ isOpen, onClose, onSubmit, initialData 
         </div>
         <div>
           <Autocomplete
-            label="Ciudad de Destino"
+            label="Destination City"
             options={cityOptions}
             displayKey="name"
-            placeholder="Buscar ciudad de destino..."
+            placeholder="Search destination city..."
             onSelect={handleDestinySelect}
             initialValue={selectedDestiny?.name || ''}
             required
@@ -169,7 +169,7 @@ export default function RouteModalForm({ isOpen, onClose, onSubmit, initialData 
           {errors.destiny && <p className="text-red-500 text-sm">{errors.destiny.message}</p>}
         </div>
         <div>
-          <label htmlFor='cost' className="block text-sm font-medium">Costo</label>
+          <label htmlFor='cost' className="block text-sm font-medium">Cost</label>
           <input
             type="number"
             id='cost'
@@ -191,13 +191,13 @@ export default function RouteModalForm({ isOpen, onClose, onSubmit, initialData 
             onClick={onClose}
             className="px-4 py-2 text-gray-600 bg-gray-200 rounded-md hover:bg-gray-300 transition-colors duration-200"
           >
-            Cancelar
+            Cancel
           </button>
           <button
             type="submit"
             className="px-4 py-2 font-semibold text-white bg-blue-600 rounded-md hover:bg-blue-700 transition-colors duration-200"
           >
-            {initialData ? 'Guardar' : 'Crear Ruta'}
+            {initialData ? 'Save' : 'Create Route'}
           </button>
         </div>
       </form>

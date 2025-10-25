@@ -7,10 +7,10 @@ function VisualizationSection() {
         <div className='bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-4'>
           <h2 className='text-xl font-semibold text-white flex items-center'>
             <span className='mr-2'>📊</span>
-            {' '}Visualización de Rutas
+            {' '}Route Visualization
           </h2>
           <p className='text-blue-100 text-sm mt-1'>
-            Mapa interactivo de conexiones entre ciudades
+            Interactive map of connections between cities
           </p>
         </div>
         <div className='p-1 md:p-6'>

@@ -10,7 +10,7 @@ function AverageCostCard({ routes }: Readonly<AverageCostCardProps>) {
   return (
     <StatCard>
       <div>
-        <p className='text-sm font-medium text-gray-600'>Costo Promedio</p>
+        <p className='text-sm font-medium text-gray-600'>Mean cost</p>
         <p className='text-2xl font-bold text-purple-600'>
           ${routes?.length ? (routes.reduce((sum, r) => sum + r.cost, 0) / routes.length).toFixed(0) : '0'}
         </p>

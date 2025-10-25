@@ -26,11 +26,11 @@ export default function Autocomplete({
   label,
   onSelect,
   displayKey = "label",
-  placeholder = "Buscar...",
+  placeholder = "Search...",
   disabled = false,
   required = false,
   clearable = true,
-  noOptionsText = "No se encontraron opciones",
+  noOptionsText = "No options found",
   maxOptions = 50,
   initialValue = "",
   className = "",
@@ -197,7 +197,7 @@ export default function Autocomplete({
       dropdownContent = (
         <div className="px-4 py-3 text-gray-500 text-sm flex items-center">
           <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500 mr-2"></div>
-          Cargando opciones...
+          Loading options...
         </div>
       );
     } else if (filteredOptions.length > 0) {
@@ -234,7 +234,7 @@ export default function Autocomplete({
             >
               {typeof option[displayKey] === 'string' ?
                 highlightMatch(option[displayKey], inputValue) :
-                'Sin nombre'
+                'Without label'
               }
             </button>
           ))}
@@ -300,7 +300,7 @@ export default function Autocomplete({
             type="button"
             className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
             onClick={handleClear}
-            aria-label="Limpiar selección"
+            aria-label="Clean selection"
           >
             <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />

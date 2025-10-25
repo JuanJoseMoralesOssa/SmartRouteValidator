@@ -24,9 +24,9 @@ const CityEdit = ({ city, onEditCity }: CityEditProps) => {
         onClick={handleClick}
         customColor={city.color}
         icon="✏️"
-        aria-label={`Editar ciudad de ${city.name}`}
+        aria-label={`Edit city ${city.name}`}
       >
-        Editar
+        Edit
       </ActionButton>
       <CityModalForm
         isOpen={isOpen}

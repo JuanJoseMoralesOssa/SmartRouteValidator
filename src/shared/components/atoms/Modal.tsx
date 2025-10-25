@@ -51,7 +51,7 @@ function Modal({ isOpen, onClose, title, children, className = '' }: ModalProps)
             <button
               onClick={onClose}
               className="modal-close-btn"
-              aria-label="Cerrar modal"
+              aria-label="Close modal"
             >
               <svg
                 width="24"

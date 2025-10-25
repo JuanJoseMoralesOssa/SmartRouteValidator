@@ -88,7 +88,7 @@ const RouteVisualization = ({ highlightedRouteId }: RouteVisualizationProps) => 
             <canvas
                 ref={canvasRef}
                 width={800}
-                height={450}
+                height={350}
                 className='w-full h-full border rounded-lg shadow-lg'
             />
         </div>

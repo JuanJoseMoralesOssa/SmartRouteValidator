@@ -13,9 +13,8 @@ INSERT INTO conexiones VALUES(4, 2, 'S', 12000);
 INSERT INTO conexiones VALUES(2, 1, 'S', 12000);
 INSERT INTO conexiones VALUES(4, 1, 'S', 24000);
 
-
-mira si se puede mejorar el manejo de las imagenes,
-con las aristas, ya que se estan sobre poniendo,
+mirar las aristas para que tengan  los pesos y se vaya acumulando el peso del camino
+desplegar la aplicacion 
 mira si despues implementamos mejor react flow
 
 ademas, agrega el enunciado del ejercicio, con el codigo para mostrar

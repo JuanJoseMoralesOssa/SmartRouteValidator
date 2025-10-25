@@ -6,15 +6,15 @@ function TableHead() {
       <tr>
         {<TableHeaderCell>
           <span className='text-lg'>🏙️</span>
-          <span>Origen</span>
+          <span>Origin</span>
         </TableHeaderCell>}
         <TableHeaderCell>
           <span className='text-lg'>🎯</span>
-          <span>Destino</span>
+          <span>Destination</span>
         </TableHeaderCell>
         <TableHeaderCell>
           <span className='text-lg'>💰</span>
-          <span>Costo</span>
+          <span>Cost</span>
         </TableHeaderCell>
         {/* <TableHeaderCell>
           <span className='text-lg'>✈️</span>
@@ -29,7 +29,7 @@ function TableHead() {
         <th className='px-6 py-5 text-right text-xs font-bold text-gray-700 uppercase tracking-wider min-w-[180px]'>
           <div className='flex items-center justify-end space-x-2'>
             <span className='text-lg'>⚙️</span>
-            <span>Acciones</span>
+            <span>Actions</span>
           </div>
         </th>
       </tr>

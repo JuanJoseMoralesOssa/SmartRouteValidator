@@ -8,7 +8,7 @@ interface AppHeaderProps {
 
 const navigationItems = [
   { path: '/', label: 'Home', icon: '🏠' },
-  { path: '/cities', label: 'Ciudades', icon: '🏙️' }
+  // { path: '/cities', label: 'Cities', icon: '🏙️' }
 ]
 
 export default function AppHeader({ onMenuToggle, isMenuOpen }: Readonly<AppHeaderProps>) {
@@ -17,9 +17,9 @@ export default function AppHeader({ onMenuToggle, isMenuOpen }: Readonly<AppHead
 
   const getPageTitle = () => {
     if (location.pathname === '/cities') {
-      return '🏙️ Ciudades'
+      return '🏙️ Cities'
     } else if (location.pathname.startsWith('/cities/')) {
-      return '🏙️ Detalle de Ciudad'
+      return '🏙️ City Details'
     } else {
       return 'Smart Route Validator'
     }

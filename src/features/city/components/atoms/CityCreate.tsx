@@ -10,11 +10,11 @@ const CityCreate = () => {
         <div>
             <ActionButton
                 onClick={openModal}
-                aria-label="Crear nueva ciudad"
+                aria-label="Create new city"
                 icon="🏙️"
                 customColor="#006600"
             >
-                Crear Ciudad
+                Create City
             </ActionButton>
             <CityModalForm
                 isOpen={isOpen}

@@ -7,7 +7,7 @@ interface MobileNavProps {
 
 const navigationItems = [
   { path: '/', label: 'Home', icon: '🏠' },
-  { path: '/cities', label: 'Ciudades', icon: '🏙️' }
+  // { path: '/cities', label: 'Cities', icon: '🏙️' }
 ]
 
 export default function MobileNav({ isOpen, onClose }: Readonly<MobileNavProps>) {
@@ -29,12 +29,12 @@ export default function MobileNav({ isOpen, onClose }: Readonly<MobileNavProps>)
         {/* Header del menú */}
         <div className="flex items-center justify-between p-4 border-b border-gray-100">
           <h2 className="text-lg font-semibold text-gray-800">
-            Navegación
+            Navigation
           </h2>
           <button
             onClick={onClose}
             className="p-2 rounded-md hover:bg-gray-100 transition-colors"
-            aria-label="Cerrar menú"
+            aria-label="Close menu"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />

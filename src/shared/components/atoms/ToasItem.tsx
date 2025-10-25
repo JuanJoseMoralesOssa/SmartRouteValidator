@@ -123,7 +123,7 @@ export default function ToastItem({ toast, onRemove }: Readonly<ToastItemProps>)
               handleRemove();
             }}
             className="flex-shrink-0 w-6 h-6 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center transition-colors duration-200"
-            aria-label="Cerrar notificación"
+            aria-label="Close notification"
             type="button"
           >
             <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">

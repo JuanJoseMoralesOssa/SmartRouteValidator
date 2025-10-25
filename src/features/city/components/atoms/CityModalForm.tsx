@@ -11,9 +11,9 @@ import { useCityController } from '../../hooks/useCityController'
 import { mockCities } from '@/shared/types/mocks/MockCities'
 
 const formSchema = z.object({
-  name: z.string().min(1, 'El nombre es requerido'),
-  color: z.string().min(1, 'El color es requerido'),
-  svgType: z.string().min(1, 'Debe seleccionar un tipo de SVG'),
+  name: z.string().min(1, 'Name is required').max(100, 'Name must be at most 100 characters'),
+  color: z.string().min(1, 'Color is required'),
+  svgType: z.string().min(1, 'You must select an SVG type'),
   icon: z.string().optional(),
   id: z.string().optional().or(z.number().optional()).or(z.null()),
 })
@@ -159,11 +159,11 @@ export default function CityModalForm({ isOpen, onClose, onSubmit, initialData }
       isOpen={isOpen}
       onClose={onClose}
       className='h-screen'
-      title={initialData ? 'Editar Ciudad' : 'Nueva Ciudad'}
+      title={initialData ? 'Edit City' : 'New City'}
     >
       <form onSubmit={handleSubmit(submitForm)} className="space-y-4">
         <div>
-          <label htmlFor='name' className="block text-sm font-medium">Nombre de la Ciudad</label>
+          <label htmlFor='name' className="block text-sm font-medium">City Name</label>
           <input
             id='name'
             {...register('name')}
@@ -189,7 +189,7 @@ export default function CityModalForm({ isOpen, onClose, onSubmit, initialData }
               placeholder="#FF6B6B"
             />
           </div>
-          <p className="text-xs text-gray-500 mt-1">Selecciona de la paleta o usa el selector de color personalizado</p>
+          <p className="text-xs text-gray-500 mt-1">Select from the palette or use the personalized color selector</p>
           <div className="mt-2 grid grid-cols-8 gap-1">
             {DEFAULT_COLORS.map((color) => (
               <button
@@ -201,7 +201,7 @@ export default function CityModalForm({ isOpen, onClose, onSubmit, initialData }
                 }}
                 className="w-7 h-7 rounded-full border-2 border-gray-300 hover:border-gray-500 hover:scale-110 transition-all duration-200"
                 style={{ backgroundColor: color }}
-                aria-label={`Seleccionar color ${color}`}
+                aria-label={`Select color ${color}`}
                 title={color}
               />
             ))}
@@ -211,18 +211,18 @@ export default function CityModalForm({ isOpen, onClose, onSubmit, initialData }
 
         <div>
           <Autocomplete
-            label="Tipo de Ícono"
+            label="Icon type"
             options={svgTypeOptions}
             displayKey="label"
-            placeholder="Buscar tipo de ícono..."
+            placeholder="Search icon type..."
             onSelect={handleSvgTypeSelect}
             initialValue={getCurrentSvgLabel()}
             required
             clearable
-            noOptionsText="No se encontraron tipos de íconos"
+            noOptionsText="No icon types found"
           />
           {errors.svgType && <p className="text-red-500 text-sm">{errors.svgType.message}</p>}
-          <p className="text-xs text-gray-500 mt-1">O selecciona visualmente de la galería</p>
+          <p className="text-xs text-gray-500 mt-1">Or select visually from the gallery</p>
           <div className="mt-2 grid grid-cols-4 gap-3">
             {CITY_SVG_TYPES.map((svg) => {
               const SvgComponent = svg.component
@@ -240,7 +240,7 @@ export default function CityModalForm({ isOpen, onClose, onSubmit, initialData }
                     : 'border-gray-300 hover:border-gray-400'
                     }`}
                   title={svg.label}
-                  aria-label={`Seleccionar ${svg.label}`}
+                  aria-label={`Select ${svg.label}`}
                 >
                   <div className="flex flex-col items-center space-y-1">
                     <SvgComponent
@@ -248,7 +248,7 @@ export default function CityModalForm({ isOpen, onClose, onSubmit, initialData }
                       width={40}
                       height={40}
                     />
-                    <span className="text-xs font-medium text-center">{svg.label.replace('Ciudad ', '').replace('Skyline ', '')}</span>
+                    <span className="text-xs font-medium text-center">{svg.label.replace('City ', '').replace('Skyline ', '')}</span>
                   </div>
                 </button>
               )
@@ -258,19 +258,19 @@ export default function CityModalForm({ isOpen, onClose, onSubmit, initialData }
         </div>
 
         <div>
-          <div className="block text-sm font-medium mb-2">Vista Previa</div>
+          <div className="block text-sm font-medium mb-2">Svg Preview</div>
           {renderSvgPreview()}
         </div>
 
         <div>
-          <label htmlFor='icon' className="block text-sm font-medium">Ícono Personalizado</label>
+          <label htmlFor='icon' className="block text-sm font-medium">Custom Icon</label>
           <input
             id='icon'
             {...register('icon')}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="🏙️, 🌆, 🌃... o escribe tu propio emoji"
+            placeholder="🏙️, 🌆, 🌃... or write your own emoji"
           />
-          <p className="text-xs text-gray-500 mt-1">Selecciona de la galería o escribe tu propio emoji</p>
+          <p className="text-xs text-gray-500 mt-1">Select from the gallery or write your own emoji</p>
           <div className="mt-2 flex flex-wrap gap-2 items-center justify-center">
             {DEFAULT_ICONS.map((iconOption) => {
               const isSelected = selectedIcon === iconOption.value
@@ -287,11 +287,11 @@ export default function CityModalForm({ isOpen, onClose, onSubmit, initialData }
                     : 'border-gray-300 hover:border-gray-400'
                     }`}
                   title={iconOption.label}
-                  aria-label={`Seleccionar ${iconOption.label}`}
+                  aria-label={`Select ${iconOption.label}`}
                 >
                   <div className="flex flex-col items-center space-y-1">
                     <span className="text-2xl">{iconOption.value}</span>
-                    <span className="text-xs font-medium text-center leading-tight">{iconOption.label.replace('Ciudad ', '')}</span>
+                    <span className="text-xs font-medium text-center leading-tight">{iconOption.label.replace('City ', '')}</span>
                   </div>
                 </button>
               )
@@ -305,13 +305,13 @@ export default function CityModalForm({ isOpen, onClose, onSubmit, initialData }
             onClick={onClose}
             className="px-4 py-2 text-gray-600 bg-gray-200 rounded-md hover:bg-gray-300 transition-colors duration-200"
           >
-            Cancelar
+            Cancel
           </button>
           <button
             type="submit"
             className="px-4 py-2 font-semibold text-white bg-blue-600 rounded-md hover:bg-blue-700 transition-colors duration-200"
           >
-            {initialData ? 'Guardar' : 'Crear Ciudad'}
+            {initialData ? 'Save' : 'Create City'}
           </button>
         </div>
       </form>

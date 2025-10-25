@@ -152,13 +152,13 @@ export function ConfirmModal() {
                   onClick={handleCancel}
                   className="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-all duration-200 transform hover:scale-105"
                 >
-                  Cancelar
+                  Cancel
                 </button>
                 <button
                   onClick={handleConfirm}
                   className={`inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-gradient-to-r ${v.confirmBg} border border-transparent rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105`}
                 >
-                  Confirmar
+                  Confirm
                 </button>
               </div>
             </div>

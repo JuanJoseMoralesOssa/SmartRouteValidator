@@ -37,7 +37,6 @@ export function useRouteController(options?: UseRouteControllerOptions) {
 
     return async (routeId: ID, action: 'add' | 'clear' | 'remove' | 'explore') => {
       if (action === 'clear') {
-        console.log(`🧹 LIMPIANDO TODAS las rutas resaltadas y exploradas ANTES de iniciar validación`);
         store.clearHighlightedRoutes();
         store.clearExploredRoutes();
         // Pequeño delay para asegurar que la UI se actualice
@@ -47,14 +46,12 @@ export function useRouteController(options?: UseRouteControllerOptions) {
 
       if (action === 'explore') {
         // Marcar como explorada (visitada pero descartada por backtracking)
-        console.log(`  🔍 Marcando ruta ${routeId} como explorada`);
         store.addExploredRoute(routeId);
         await sleep(delay / 2); // Delay más corto para exploradas
         return;
       }
 
       if (action === 'remove') {
-        console.log(`  ➖ Quitando resaltado de ruta ${routeId} (backtrack)`);
         store.removeHighlightedRoute(routeId);
         await sleep(delay);
         return;
@@ -63,11 +60,9 @@ export function useRouteController(options?: UseRouteControllerOptions) {
       // action === 'add'
       // Verificar en el store si ya está resaltada (para evitar duplicados visuales)
       if (store.isRouteHighlighted(routeId)) {
-        console.log(`  ⏭️ Ruta ${routeId} ya resaltada en el store, omitiendo`);
         return;
       }
 
-      console.log(`  ➡️ Resaltando ruta ${routeId} en tiempo real`);
       store.addHighlightedRoute(routeId);
       await sleep(delay);
     };
@@ -77,8 +72,8 @@ export function useRouteController(options?: UseRouteControllerOptions) {
   const validateRoute = (routeToValidate: Route | Partial<Route>): boolean => {
     const defaultValidation = (route: Route | Partial<Route>) => {
       const errors: string[] = [];
-      if (!route.origin?.name?.trim()) errors.push('El nombre de origen es requerido.');
-      if (!route.destiny?.name?.trim()) errors.push('El nombre de destino es requerido.');
+      if (!route.origin?.name?.trim()) errors.push('Name is required for origin.');
+      if (!route.destiny?.name?.trim()) errors.push('Name is required for destination.');
       return errors;
     };
 
@@ -112,22 +107,20 @@ export function useRouteController(options?: UseRouteControllerOptions) {
 
       // Mantener visible el resultado final por un momento si hay visualización
       if (options?.enableVisualization && validation.exploredRoutes.length > 0) {
-        console.log(`⏸️ Mostrando resultado final por 2 segundos`);
         await sleep(2000);
       }
 
       // SIEMPRE limpiar las rutas resaltadas al finalizar
-      console.log(`🧹 Limpiando rutas resaltadas al finalizar creación`);
       store.clearHighlightedRoutes();
       store.clearExploredRoutes();
 
       setErrors([]);
       onSuccess?.(newRoute);
-      toast.success('Guardado con éxito');
+      toast.success('Saved successfully');
 
     } catch (error) {
       console.error('Error creating route:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       setErrors([errorMessage]);
       options?.onError?.(errorMessage);
       toast.error(errorMessage);
@@ -137,11 +130,13 @@ export function useRouteController(options?: UseRouteControllerOptions) {
     } finally {
       setLoading(false);
     }
-  };  // Actualizar ruta existente con visualización en tiempo real
+  };
+
+  // Actualizar ruta existente con visualización en tiempo real
   const handleUpdate = async (routeData: Partial<Route>, onSuccess?: (updatedRoute: Route) => void) => {
     const id = routeData.id;
     if (!id) {
-      const errorMsg = 'ID de ruta es requerido para actualizar.';
+      const errorMsg = 'ID route is required for update.';
       setErrors([errorMsg]);
       options?.onError?.(errorMsg);
       return;
@@ -164,12 +159,10 @@ export function useRouteController(options?: UseRouteControllerOptions) {
 
       // Mantener visible el resultado final por un momento si hay visualización
       if (options?.enableVisualization && validation.exploredRoutes.length > 0) {
-        console.log(`⏸️ Mostrando resultado final por 2 segundos`);
         await sleep(2000);
       }
 
       // SIEMPRE limpiar las rutas resaltadas al finalizar
-      console.log(`🧹 Limpiando rutas resaltadas al finalizar actualización`);
       store.clearHighlightedRoutes();
       store.clearExploredRoutes();
 
@@ -177,11 +170,11 @@ export function useRouteController(options?: UseRouteControllerOptions) {
       if (updatedRoute) onSuccess?.(updatedRoute);
 
       setErrors([]);
-      toast.success('Actualizado con éxito');
+      toast.success('Updated successfully');
 
     } catch (error) {
       console.error('Error updating route:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       setErrors([errorMessage]);
       options?.onError?.(errorMessage);
       toast.error(errorMessage);
@@ -191,7 +184,9 @@ export function useRouteController(options?: UseRouteControllerOptions) {
     } finally {
       setLoading(false);
     }
-  };  // Eliminar ruta
+  };
+
+  // Eliminar ruta
   const handleDelete = async (id: string | number, onSuccess?: () => void) => {
     try {
       setLoading(true);
@@ -199,16 +194,15 @@ export function useRouteController(options?: UseRouteControllerOptions) {
       store.removeRoute(id);
 
       onSuccess?.();
-      console.log('Ruta eliminada:', id);
 
       confirm(
-        'Eliminar elemento',
-        '¿Estás seguro que deseas eliminar este registro?',
+        'Delete route',
+        'Are you sure you want to delete this record?',
       );
 
     } catch (error) {
       console.error('Error deleting route:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       setErrors([errorMessage]);
       options?.onError?.(errorMessage);
     } finally {
@@ -225,7 +219,7 @@ export function useRouteController(options?: UseRouteControllerOptions) {
       return routes;
     } catch (error) {
       console.error('Error getting all routes:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       setErrors([errorMessage]);
       return [];
     } finally {
@@ -258,7 +252,6 @@ export function useRouteController(options?: UseRouteControllerOptions) {
       store.clearHighlightedRoutes();
       store.clearExploredRoutes();
 
-      const newRoutes: Route[] = [];
 
       // Crear las rutas de ejemplo de forma secuencial
       for (const route of mockRoutes) {
@@ -271,29 +264,26 @@ export function useRouteController(options?: UseRouteControllerOptions) {
           visualizationCallback
         );
 
-        newRoutes.push(newRoute);
+        store.addRoute(newRoute);
 
         // Mantener visible el resultado final por un momento si hay visualización
         if (options?.enableVisualization && validation.exploredRoutes.length > 0) {
-          console.log(`⏸️ Mostrando resultado final por 1 segundo`);
           await sleep(1000);
         }
 
         // Limpiar después de cada ejemplo
-        console.log(`🧹 Limpiando rutas resaltadas después del ejemplo`);
         store.clearHighlightedRoutes();
         store.clearExploredRoutes();
       }
 
       // Agregar todas las rutas de una vez
-      store.setRoutes(newRoutes);
 
-      toast.success('Ejemplos cargados correctamente');
+      toast.success('Examples loaded successfully');
       setErrors([]);
 
     } catch (error) {
       console.error('Error loading examples:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Error cargando ejemplos';
+      const errorMessage = error instanceof Error ? error.message : 'Error loading examples';
       setErrors([errorMessage]);
       toast.error(errorMessage);
       // Limpiar rutas resaltadas en caso de error

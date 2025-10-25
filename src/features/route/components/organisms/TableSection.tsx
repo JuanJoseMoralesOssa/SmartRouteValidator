@@ -7,10 +7,10 @@ function TableSection() {
         <div className='bg-gradient-to-r from-green-600 to-emerald-600 px-6 py-4'>
           <h2 className='text-xl font-semibold text-white flex items-center'>
             <span className='mr-2'>📋</span>
-            {' '}Lista de Rutas
+            {' '}Routes List
           </h2>
           <p className='text-green-100 text-sm mt-1'>
-            Gestión completa de todas las rutas
+            Complete management of all routes
           </p>
         </div>
         <div className='p-6'>

@@ -20,7 +20,7 @@ export function useCityController(options?: UseCityControllerOptions) {
   const validateCity = (cityToValidate: City | Partial<City>): boolean => {
     const defaultValidation = (city: City | Partial<City>) => {
       if (city.name?.trim() === '') {
-        return ['El nombre es requerido.'];
+        return ['Name is required.'];
       }
       return [];
     };
@@ -50,11 +50,11 @@ export function useCityController(options?: UseCityControllerOptions) {
       store.addCity(newCity);
 
       onSuccess?.(newCity);
-      console.log('Nueva ciudad creada:', newCity);
+      console.log('New city created:', newCity);
 
     } catch (error) {
       console.error('Error creating city:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       setErrors([errorMessage]);
       options?.onError?.(errorMessage);
     } finally {
@@ -66,8 +66,8 @@ export function useCityController(options?: UseCityControllerOptions) {
   const handleUpdate = async (cityData: Partial<City>, onSuccess?: (updatedCity: City) => void) => {
     const id = cityData.id;
     if (!id) {
-      setErrors(['ID de ciudad es requerido para actualizar.']);
-      options?.onError?.('ID de ciudad es requerido para actualizar.');
+      setErrors(['City ID is required for updating.']);
+      options?.onError?.('City ID is required for updating.');
       return;
     }
 
@@ -85,14 +85,14 @@ export function useCityController(options?: UseCityControllerOptions) {
       const updatedCity = store.cities.find(r => r.id === id);
       if (updatedCity) {
         onSuccess?.(updatedCity);
-        console.log('Ciudad actualizada:', updatedCity);
+        console.log('City updated:', updatedCity);
       }
 
       setErrors([]);
 
     } catch (error) {
       console.error('Error updating city:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       setErrors([errorMessage]);
       options?.onError?.(errorMessage);
     } finally {
@@ -110,11 +110,11 @@ export function useCityController(options?: UseCityControllerOptions) {
       store.removeCity(id);
 
       onSuccess?.();
-      console.log('Ciudad eliminada:', id);
+      console.log('City deleted:', id);
 
     } catch (error) {
       console.error('Error deleting city:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       setErrors([errorMessage]);
       options?.onError?.(errorMessage);
     } finally {
@@ -131,7 +131,7 @@ export function useCityController(options?: UseCityControllerOptions) {
       return cities;
     } catch (error) {
       console.error('Error getting all cities:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       setErrors([errorMessage]);
       return [];
     } finally {

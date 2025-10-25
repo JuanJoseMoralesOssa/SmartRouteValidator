@@ -9,11 +9,11 @@ function RouteExampleButton() {
 
   return (
     <LoadExampleButton onClick={loadExample}
-      ariaLabel="Cargar rutas de ejemplo"
+      ariaLabel="Load example routes"
       icon="🗺️"
       customColor="#3B82F6"
     >
-      Cargar rutas de ejemplo
+      Load example routes
     </LoadExampleButton>
   )
 }

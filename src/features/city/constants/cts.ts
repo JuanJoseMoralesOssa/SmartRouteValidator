@@ -5,25 +5,25 @@ import SkylineSVG from "@/shared/components/atoms/svgs/SkylineSVG"
 import { CitySvgEnum } from "../enums/CitySvgEnum"
 
 export const CITY_SVG_TYPES = [
-  { value: CitySvgEnum.Classic, label: 'Ciudad Clásica', component: ClassicCitySVG },
-  { value: CitySvgEnum.Domed, label: 'Ciudad con Cúpulas', component: DomedCitySVG },
-  { value: CitySvgEnum.Futuristic, label: 'Ciudad Futurista', component: FuturisticCitySVG },
-  { value: CitySvgEnum.Skyline, label: 'Skyline Moderno', component: SkylineSVG },
+  { value: CitySvgEnum.Classic, label: 'Classic city', component: ClassicCitySVG },
+  { value: CitySvgEnum.Domed, label: 'Domed city', component: DomedCitySVG },
+  { value: CitySvgEnum.Futuristic, label: 'Futuristic city', component: FuturisticCitySVG },
+  { value: CitySvgEnum.Skyline, label: 'Modern skyline', component: SkylineSVG },
 ] as const
 
 
 // Íconos predefinidos para ciudades
 export const DEFAULT_ICONS = [
-  { value: '🏙️', label: 'Ciudad General' },
-  { value: '🌆', label: 'Ciudad al Atardecer' },
-  { value: '🌃', label: 'Ciudad Nocturna' },
-  { value: '🏢', label: 'Edificios Corporativos' },
-  { value: '🗼', label: 'Torre/Monumento' },
-  { value: '🏰', label: 'Castillo/Ciudad Histórica' },
-  { value: '🌉', label: 'Ciudad con Puente' },
-  { value: '🏛️', label: 'Ciudad Clásica' },
-  { value: '🕌', label: 'Ciudad Árabe' },
-  { value: '⛩️', label: 'Ciudad Asiática' },
-  { value: '🏖️', label: 'Ciudad Costera' },
-  { value: '⛰️', label: 'Ciudad Montañosa' },
+  { value: '🏙️', label: 'General city' },
+  { value: '🌆', label: 'Sunset city' },
+  { value: '🌃', label: 'Night city' },
+  { value: '🏢', label: 'Corporate buildings' },
+  { value: '🗼', label: 'Tower/Monument' },
+  { value: '🏰', label: 'Castle/Historical city' },
+  { value: '🌉', label: 'City with Bridge' },
+  { value: '🏛️', label: 'Classic city' },
+  { value: '🕌', label: 'Arab city' },
+  { value: '⛩️', label: 'Asian city' },
+  { value: '🏖️', label: 'Coastal city' },
+  { value: '⛰️', label: 'Mountain city' },
 ] as const
