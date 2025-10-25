@@ -12,7 +12,8 @@ function DirectRouteCard({ routes }: Readonly<DirectRouteCardProps>) {
       <div>
         <p className='text-sm font-medium text-gray-600'>Rutas Directas</p>
         <p className='text-2xl font-bold text-green-600'>
-          {routes?.filter(r => r.isDirectRoute).length || 0}
+          { routes?.length }
+          {/* {routes?.filter(r => r.isDirectRoute).length || 0} */}
         </p>
       </div>
       <StatIcon className="bg-green-100">🚀</StatIcon>
