@@ -11,10 +11,11 @@ export class RouteVisualizationController {
   // Cache persistente de posiciones para evitar reposicionamiento
   private static readonly cityPositionCache = new Map<string, { x: number; y: number }>()
 
-  // Configuración de espaciado y distribución por sectores dinámicos
+  // Configuración simple para posiciones aleatorias
   private static readonly POSITION_CONFIG = {
-    MIN_SECTOR_SIZE: 150, // Tamaño mínimo de un sector en píxeles
-    MARGIN: 60 // Margen desde los bordes del canvas
+    MARGIN: 30, // Margen desde los bordes del canvas
+    MIN_DISTANCE_BETWEEN_CITIES: 120, // Distancia mínima entre ciudades
+    MAX_PLACEMENT_ATTEMPTS: 100 // Intentos máximos para colocar una ciudad
   }
 
   /**
@@ -90,119 +91,70 @@ export class RouteVisualizationController {
   }
 
   /**
-   * Calcula el número óptimo de filas y columnas basado en el número de ciudades
-   *
-   * Ejemplos de distribución dinámica:
-   * - 1-2 ciudades: 1x2 o 2x1 (según proporción del canvas)
-   * - 3-4 ciudades: 2x2
-   * - 5-6 ciudades: 2x3 o 3x2
-   * - 7-9 ciudades: 3x3
-   * - 10-12 ciudades: 3x4 o 4x3
-   * - 13-16 ciudades: 4x4
-   * Y así sucesivamente...
-   *
-   * El algoritmo:
-   * 1. Calcula la raíz cuadrada del número de ciudades
-   * 2. Ajusta según la proporción del canvas (más ancho = más columnas)
-   * 3. Verifica que los sectores no sean demasiado pequeños
+   * Genera una posición aleatoria válida dentro del canvas
    */
-  static calculateOptimalGrid(
-    numCities: number,
-    canvasWidth: number,
-    canvasHeight: number
-  ): { rows: number; cols: number } {
-    if (numCities === 0) return { rows: 1, cols: 1 }
-
-    // Calcular la proporción del canvas
-    const aspectRatio = canvasWidth / canvasHeight
-
-    // Calcular número de columnas basado en la raíz cuadrada y la proporción
-    const sqrtCities = Math.sqrt(numCities)
-    let cols = Math.ceil(sqrtCities * Math.sqrt(aspectRatio))
-    let rows = Math.ceil(numCities / cols)
-
-    // Ajustar para asegurar que todos los sectores quepan
-    while (cols * rows < numCities) {
-      rows++
-    }
-
-    // Verificar que los sectores no sean demasiado pequeños
-    const { MIN_SECTOR_SIZE, MARGIN } = this.POSITION_CONFIG
-    const availableWidth = canvasWidth - (2 * MARGIN)
-    const availableHeight = canvasHeight - (2 * MARGIN)
-
-    const sectorWidth = availableWidth / cols
-    const sectorHeight = availableHeight / rows
-
-    // Si los sectores son muy pequeños, reducir el número de columnas
-    if (sectorWidth < MIN_SECTOR_SIZE || sectorHeight < MIN_SECTOR_SIZE) {
-      cols = Math.max(1, Math.floor(availableWidth / MIN_SECTOR_SIZE))
-      rows = Math.ceil(numCities / cols)
-    }
-
-    return { rows, cols }
-  }
-
-  /**
-   * Calcula las dimensiones y posiciones de los sectores en el canvas
-   */
-  static calculateSectorGrid(
-    canvas: HTMLCanvasElement,
-    numCities: number
-  ): {
-    sectorWidth: number
-    sectorHeight: number
-    gridStartX: number
-    gridStartY: number
-    rows: number
-    cols: number
-  } {
+  private static generateRandomPosition(canvas: HTMLCanvasElement): { x: number; y: number } {
     const { MARGIN } = this.POSITION_CONFIG
 
-    const availableWidth = canvas.width - (2 * MARGIN)
-    const availableHeight = canvas.height - (2 * MARGIN)
+    const minX = MARGIN
+    const maxX = canvas.width - MARGIN
+    const minY = MARGIN
+    const maxY = canvas.height - MARGIN
 
-    const { rows, cols } = this.calculateOptimalGrid(numCities, canvas.width, canvas.height)
+    const x = minX + Math.random() * (maxX - minX)
+    const y = minY + Math.random() * (maxY - minY)
 
-    const sectorWidth = availableWidth / cols
-    const sectorHeight = availableHeight / rows
-
-    return {
-      sectorWidth,
-      sectorHeight,
-      gridStartX: MARGIN,
-      gridStartY: MARGIN,
-      rows,
-      cols
-    }
-  }  /**
-   * Calcula la posición de una ciudad basada en su índice usando el sistema de sectores dinámico
-   * IMPORTANTE: Cada ciudad ocupa su propio sector único, sin superposición
-   */
-  static calculateCityPositionInSector(
-    cityIndex: number,
-    totalCities: number,
-    canvas: HTMLCanvasElement
-  ): { x: number; y: number } {
-    const { sectorWidth, sectorHeight, gridStartX, gridStartY, cols } =
-      this.calculateSectorGrid(canvas, totalCities)
-
-    // Cada ciudad tiene su propio sector único (sin módulo)
-    const sectorRow = Math.floor(cityIndex / cols)
-    const sectorCol = cityIndex % cols
-
-    // Calcular el centro del sector
-    const sectorCenterX = gridStartX + (sectorCol * sectorWidth) + (sectorWidth / 2)
-    const sectorCenterY = gridStartY + (sectorRow * sectorHeight) + (sectorHeight / 2)
-
-    return {
-      x: sectorCenterX,
-      y: sectorCenterY
-    }
+    return { x, y }
   }
 
   /**
-   * Calcula las posiciones de las ciudades usando el sistema de sectores
+   * Verifica si una posición está demasiado cerca de las posiciones existentes
+   */
+  private static isTooClose(
+    newPos: { x: number; y: number },
+    existingPositions: Array<{ x: number; y: number }>
+  ): boolean {
+    const { MIN_DISTANCE_BETWEEN_CITIES } = this.POSITION_CONFIG
+
+    for (const pos of existingPositions) {
+      const dx = newPos.x - pos.x
+      const dy = newPos.y - pos.y
+      const distance = Math.sqrt(dx * dx + dy * dy)
+
+      if (distance < MIN_DISTANCE_BETWEEN_CITIES) {
+        return true
+      }
+    }
+
+    return false
+  }
+
+  /**
+   * Encuentra una posición aleatoria que no colisione con otras ciudades
+   */
+  private static findValidRandomPosition(
+    canvas: HTMLCanvasElement,
+    existingPositions: Array<{ x: number; y: number }>
+  ): { x: number; y: number } | null {
+    const { MAX_PLACEMENT_ATTEMPTS } = this.POSITION_CONFIG
+
+    for (let attempt = 0; attempt < MAX_PLACEMENT_ATTEMPTS; attempt++) {
+      const newPos = this.generateRandomPosition(canvas)
+
+      if (!this.isTooClose(newPos, existingPositions)) {
+        return newPos
+      }
+    }
+
+    // Si no se encontró una posición después de muchos intentos,
+    // retornar una posición aleatoria de todos modos (es mejor que nada)
+    console.warn('⚠️ No se encontró posición ideal, usando posición aleatoria')
+    return this.generateRandomPosition(canvas)
+  }
+
+  /**
+   * Calcula las posiciones de las ciudades usando posiciones aleatorias
+   * Las ciudades nuevas se colocan aleatoriamente pero sin colisionar con las existentes
    */
   static calculateCityPositions(cities: City[], canvas: HTMLCanvasElement): Map<string, { x: number; y: number }> {
     const positions = new Map<string, { x: number; y: number }>()
@@ -223,38 +175,30 @@ export class RouteVisualizationController {
       return positions
     }
 
-    // Primero, cargar las posiciones ya existentes en el cache
-    const existingCities: City[] = []
-    const newCities: City[] = []
+    // Array para rastrear todas las posiciones ocupadas
+    const occupiedPositions: Array<{ x: number; y: number }> = []
 
+    // Procesar cada ciudad
     for (const city of cities) {
       if (!city.name) continue
 
+      // Si la ciudad ya tiene una posición en caché, usarla
       if (this.cityPositionCache.has(city.name)) {
         const cachedPosition = this.cityPositionCache.get(city.name)!
         positions.set(city.name, cachedPosition)
-        existingCities.push(city)
+        occupiedPositions.push(cachedPosition)
       } else {
-        newCities.push(city)
-      }
-    }
+        // Ciudad nueva: encontrar una posición aleatoria válida
+        const newPosition = this.findValidRandomPosition(canvas, occupiedPositions)
 
-    // Calcular posiciones para ciudades nuevas usando el sistema de sectores
-    const startIndex = existingCities.length
-
-    for (let index = 0; index < newCities.length; index++) {
-      const city = newCities[index]
-      if (!city.name) continue
-
-      const cityIndex = startIndex + index
-      const position = this.calculateCityPositionInSector(cityIndex, cities.length, canvas)
-
-      if (position && Number.isFinite(position.x) && Number.isFinite(position.y)) {
-        // Guardar en cache y en el resultado
-        this.cityPositionCache.set(city.name, position)
-        positions.set(city.name, position)
-      } else {
-        console.warn(`❌ No se pudo posicionar la ciudad: ${city.name}`)
+        if (newPosition) {
+          // Guardar en caché y en el resultado
+          this.cityPositionCache.set(city.name, newPosition)
+          positions.set(city.name, newPosition)
+          occupiedPositions.push(newPosition)
+        } else {
+          console.warn(`❌ No se pudo posicionar la ciudad: ${city.name}`)
+        }
       }
     }
 
@@ -557,7 +501,7 @@ export class RouteVisualizationController {
 
     if (controlPoint) {
       // Para curvas, calcular el punto donde terminará la línea (antes de la flecha)
-      const tEnd = 0.95 // Punto donde termina la línea (ajustado para más espacio)
+      const tEnd = 0.98 // Punto donde termina la línea (ajustado para más espacio)
 
       // Calcular el punto en la curva donde termina la línea
       lineEndX = (1 - tEnd) * (1 - tEnd) * startX + 2 * (1 - tEnd) * tEnd * controlPoint.cpX + tEnd * tEnd * endX
